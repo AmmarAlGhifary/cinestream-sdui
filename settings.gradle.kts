@@ -21,3 +21,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "CineStream"
 include(":app")
+include(":core:sdui")
+include(":core:network")
+include(":core:designsystems")
+include(":feature:home")
