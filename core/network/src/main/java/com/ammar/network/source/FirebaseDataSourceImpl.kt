@@ -1,6 +1,5 @@
 package com.ammar.network.source
 
-import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
@@ -17,20 +16,26 @@ class FirebaseDataSourceImpl @Inject constructor(
     override fun getScreenBlueprint(screenId: String): Flow<Result<String>> = callbackFlow {
         val ref = database.getReference("sdui_screens").child(screenId)
 
-        val listener = object : ValueEventListener{
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val jsonString = snapshot.getValue(String::class.java)
+
                 if (jsonString != null) {
                     trySend(Result.success(jsonString))
                 } else {
-                    trySend(Result.failure(Exception("Blueprint not found for screen: $screenId")))                }
+                    trySend(Result.failure(Exception("Json not found for screen: $screenId")))
+                }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                trySend(Result.failure(error.toException()))            }
+                val exception = error.toException()
+                trySend(Result.failure(exception))
+                close(exception)
+            }
         }
 
         ref.addValueEventListener(listener)
+
         awaitClose {
             ref.removeEventListener(listener)
         }
