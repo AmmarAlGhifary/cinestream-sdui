@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "862427531855",
+    "project_id": "cinestream-sdui-backend",
+    "storage_bucket": "cinestream-sdui-backend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:862427531855:android:e9e98e80dd2992930b383a",
+        "android_client_info": {
+          "package_name": "com.ammar.cinestream"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2zUehwowIwuB10g8AZ0nxo8BAyzqiB9k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
