@@ -1,10 +1,12 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.dagger.hilt)
+    alias(libs.plugins.google.ksp)
 }
 
 android {
-    namespace = "com.ammar.sdui.cinestream.core.sdui"
+    namespace = "com.ammar.cinestream.core.sdui"
     compileSdk {
         version = release(36)
     }
@@ -34,6 +36,10 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
+
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
