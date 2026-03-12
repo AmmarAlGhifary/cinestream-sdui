@@ -17,15 +17,9 @@ data class NavigationAction(
 ) : SduiAction()
 
 @Serializable
-@SerialName("playback_action")
-data class PlaybackAction(
-    val movieId: String
-) : SduiAction()
-
-// UI COMPONENT IMPLEMENTATIONS
-@Serializable
 @SerialName("screen")
 data class SduiScreen(
+    @SerialName("screen_id")
     val screenId: String,
     val toolbar: SduiComponent? = null,
     val body: SduiComponent
@@ -41,13 +35,14 @@ data class SduiAppBar(
 @Serializable
 @SerialName("text")
 data class SduiText(
+    @SerialName("text_content")
     val textContent: String
 ) : SduiComponent()
 
 @Serializable
 @SerialName("icon_button")
 data class SduiIconButton(
-    val iconName: String,
+    @SerialName("icon_name") val iconName: String,
     val action: SduiAction? = null
 ) : SduiComponent()
 
@@ -60,6 +55,7 @@ data class SduiColumn(
 @Serializable
 @SerialName("featured_hero")
 data class SduiFeaturedHero(
+    @SerialName("image_url")
     val imageUrl: String,
     val title: SduiComponent,
     val description: SduiComponent,
@@ -78,6 +74,7 @@ data class SduiButton(
 @SerialName("section_header")
 data class SduiSectionHeader(
     val title: SduiComponent,
+    @SerialName("action_button")
     val actionButton: SduiComponent? = null
 ) : SduiComponent()
 
@@ -91,7 +88,9 @@ data class SduiTextButton(
 @Serializable
 @SerialName("movie_carousel")
 data class SduiMovieCarousel(
+    @SerialName("carousel_id")
     val carouselId: String,
+    @SerialName("item_type")
     val itemType: String,
     val items: List<SduiComponent>
 ) : SduiComponent()
@@ -99,9 +98,10 @@ data class SduiMovieCarousel(
 @Serializable
 @SerialName("movie_card")
 data class SduiMovieCard(
+    @SerialName("movie_id")
     val movieId: String,
+    @SerialName("poster_url")
     val posterUrl: String,
     val title: SduiComponent,
-    val progress: Float? = null,
     val action: SduiAction? = null
 ) : SduiComponent()
