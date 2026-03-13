@@ -4,6 +4,7 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
+import com.google.gson.Gson
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -18,9 +19,10 @@ class FirebaseDataSourceImpl @Inject constructor(
 
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
-                val jsonString = snapshot.getValue(String::class.java)
+                val rawValue = snapshot.value
 
-                if (jsonString != null) {
+                if (rawValue != null) {
+                    val jsonString = Gson().toJson(rawValue)
                     trySend(Result.success(jsonString))
                 } else {
                     trySend(Result.failure(Exception("Json not found for screen: $screenId")))

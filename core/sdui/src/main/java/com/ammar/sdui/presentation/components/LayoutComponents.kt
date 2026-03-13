@@ -5,10 +5,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -19,7 +24,6 @@ import com.ammar.sdui.domain.model.SduiScreen
 import com.ammar.sdui.domain.model.SduiText
 import com.ammar.sdui.presentation.registry.UiComponentRenderer
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SduiScreenComponent(
     model: SduiScreen,
@@ -54,7 +58,13 @@ fun SduiAppBarComponent(
                 UiComponentRenderer(component = actionComponent, onAction = onAction)
             }
         },
-        modifier = modifier
+        modifier = modifier,
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = colorScheme.background,
+            scrolledContainerColor = colorScheme.background,
+            titleContentColor = colorScheme.onBackground,
+            actionIconContentColor = colorScheme.onBackground
+        )
     )
 }
 
@@ -64,18 +74,14 @@ fun SduiColumnComponent(
     modifier: Modifier = Modifier,
     onAction: (SduiAction) -> Unit
 ) {
-    Column(modifier = modifier.fillMaxWidth()) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+    ) {
         model.children.forEach { child ->
             UiComponentRenderer(component = child, onAction = onAction)
         }
     }
-}
-
-@Composable
-fun SdUiTextComponent(model: SduiText, modifier: Modifier = Modifier) {
-    Text(
-        text = model.textContent,
-        modifier = modifier.padding(8.dp)
-    )
 }
 

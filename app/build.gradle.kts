@@ -9,7 +9,9 @@ plugins {
 
 android {
     namespace = "com.ammar.cinestream"
-    compileSdk = 35
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         applicationId = "com.ammar.cinestream"
@@ -62,6 +64,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.coil.compose)
+    implementation(libs.kotlinx.coroutines.core)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
