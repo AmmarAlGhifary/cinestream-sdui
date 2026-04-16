@@ -7,7 +7,9 @@ plugins {
 
 android {
     namespace = "com.ammar.cinestream.core.network"
-    compileSdk = 35
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         minSdk = 26
@@ -46,4 +48,5 @@ dependencies {
     ksp(libs.hilt.compiler)
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.gson)
 }
