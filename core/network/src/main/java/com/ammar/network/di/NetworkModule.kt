@@ -35,10 +35,14 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        val contentType = "application/json".toMediaType()
+    fun provideJsonParser(): Json {
+        return Json { ignoreUnknownKeys = true }
+    }
 
-        val json = Json { ignoreUnknownKeys = true }
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
+        val contentType = "application/json".toMediaType()
 
         return Retrofit.Builder()
             .baseUrl("https://sdui-backend.vercel.app/")

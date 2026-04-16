@@ -28,7 +28,7 @@ class HomeViewModel @Inject constructor(
     private fun fetcHomeScreen() {
         viewModelScope.launch {
             _UiState.value = HomeUiState.Loading
-            getSduiScreenUseCase("home_screen").collect { result ->
+            getSduiScreenUseCase("home").collect { result ->
                 result.fold(
                     onSuccess = { sduiScreen ->
                         _UiState.value = HomeUiState.Success(sduiScreen)
@@ -46,7 +46,6 @@ class HomeViewModel @Inject constructor(
             is NavigationAction -> {
                 println("Navigation Triggered: Destination = ${action.destination}, Params = ${action.params}")
             }
-            // TODO Add other actions here later
         }
     }
 }

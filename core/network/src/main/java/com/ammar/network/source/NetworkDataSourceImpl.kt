@@ -14,7 +14,8 @@ class NetworkDataSourceImpl @Inject constructor(
             val response = apiService.getScreenBlueprint(screenId)
 
             if (response.isSuccessful && response.body() != null) {
-                emit(Result.success(response.body()!!))
+                val rawJson = response.body()!!.string()
+                emit(Result.success(rawJson))
             } else {
                 emit(Result.failure(Exception("Network error: ${response.code()} ${response.message()}")))
             }
