@@ -17,13 +17,9 @@ class SduiRepositoryImpl @Inject constructor(
             result.fold(
                 onSuccess = { jsonString ->
                     try {
-                        // Decode the raw string into our polymorphic models!
-                        // Because SduiScreen contains SduiComponent children, the parser walks
-                        // the whole tree automatically based on the "type" fields.
                         val screen = json.decodeFromString<SduiScreen>(jsonString)
                         Result.success(screen)
                     } catch (e: Exception) {
-                        // Catch parsing errors (e.g., if the JSON is malformed or missing a type)
                         Result.failure(Exception("Failed to parse SDUI JSON: ${e.message}", e))
                     }
                 },
