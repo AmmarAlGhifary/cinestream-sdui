@@ -15,7 +15,7 @@ object FirebaseModule {
     @Provides
     @Singleton
     fun provideFirebaseDatabase(): FirebaseDatabase {
-        return FirebaseDatabase.getInstance()
+        return FirebaseDatabase.getInstance("https://cinestream-sdui-backend-default-rtdb.asia-southeast1.firebasedatabase.app")
     }
 
     @Provides

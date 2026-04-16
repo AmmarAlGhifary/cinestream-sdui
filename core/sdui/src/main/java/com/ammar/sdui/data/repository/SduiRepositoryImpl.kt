@@ -17,7 +17,7 @@ class SduiRepositoryImpl @Inject constructor(
             result.fold(
                 onSuccess = { jsonString ->
                     try {
-                        // 3. The Magic: Decode the raw string into our polymorphic models!
+                        // Decode the raw string into our polymorphic models!
                         // Because SduiScreen contains SduiComponent children, the parser walks
                         // the whole tree automatically based on the "type" fields.
                         val screen = json.decodeFromString<SduiScreen>(jsonString)
