@@ -7,7 +7,9 @@ plugins {
 
 android {
     namespace = "com.ammar.cinestream.core.network"
-    compileSdk = 35
+    compileSdk {
+        version = release(36)
+    }
 
     defaultConfig {
         minSdk = 26
@@ -38,11 +40,13 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.database)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.serialization.converter)
+    implementation(libs.okhttp.logging)
 
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
 
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.gson)
 }

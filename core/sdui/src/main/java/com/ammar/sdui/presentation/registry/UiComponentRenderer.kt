@@ -18,6 +18,7 @@ import com.ammar.sdui.domain.model.SduiFeaturedHero
 import com.ammar.sdui.domain.model.SduiIconButton
 import com.ammar.sdui.domain.model.SduiMovieCard
 import com.ammar.sdui.domain.model.SduiMovieCarousel
+import com.ammar.sdui.domain.model.SduiScreen
 import com.ammar.sdui.domain.model.SduiSectionHeader
 import com.ammar.sdui.domain.model.SduiText
 import com.ammar.sdui.domain.model.SduiTextButton
@@ -29,6 +30,7 @@ import com.ammar.sdui.presentation.components.SduiFeaturedHeroCompoent
 import com.ammar.sdui.presentation.components.SduiIconButtonComponent
 import com.ammar.sdui.presentation.components.SduiMovieCardComponent
 import com.ammar.sdui.presentation.components.SduiMovieCarouselComponent
+import com.ammar.sdui.presentation.components.SduiScreenComponent
 import com.ammar.sdui.presentation.components.SduiSectionHeaderComponent
 import com.ammar.sdui.presentation.components.SduiTextButtonComponent
 
@@ -39,6 +41,9 @@ fun UiComponentRenderer(
     onAction: (SduiAction) -> Unit = {}
 ) {
     when (component) {
+        // Screen
+        is SduiScreen -> SduiScreenComponent(component, modifier, onAction)
+
         // Layouts
         is SduiColumn -> SduiColumnComponent(component, modifier, onAction)
         is SduiAppBar -> SduiAppBarComponent(component, modifier, onAction)
