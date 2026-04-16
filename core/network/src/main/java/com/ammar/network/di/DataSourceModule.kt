@@ -1,7 +1,7 @@
 package com.ammar.network.di
 
-import com.ammar.network.source.FirebaseDataSource
-import com.ammar.network.source.FirebaseDataSourceImpl
+import com.ammar.network.source.NetworkDataSource
+import com.ammar.network.source.NetworkDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -14,7 +14,7 @@ abstract class DataSourceModule {
 
     @Binds
     @Singleton
-    abstract fun bindFirebaseDataSource(
-        impl: FirebaseDataSourceImpl
-    ): FirebaseDataSource
+    abstract fun bindSduiDataSource(
+        retrofitDataSourceImpl: NetworkDataSourceImpl
+    ): NetworkDataSource
 }

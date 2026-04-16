@@ -9,12 +9,12 @@ plugins {
 
 android {
     namespace = "com.ammar.cinestream"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.ammar.cinestream"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
