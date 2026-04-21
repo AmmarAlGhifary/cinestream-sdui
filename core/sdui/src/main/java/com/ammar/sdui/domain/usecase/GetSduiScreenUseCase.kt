@@ -6,5 +6,8 @@ import javax.inject.Inject
 class GetSduiScreenUseCase @Inject constructor(
     private val repository: SduiRepository
 ) {
-    operator fun invoke(screenID: String) = repository.getScreen(screenID)
+    operator fun invoke(
+        screenID: String,
+        params: Map<String, String> = emptyMap()
+    ) = repository.getScreen(screenID, params)
 }

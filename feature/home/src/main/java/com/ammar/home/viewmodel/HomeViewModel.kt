@@ -18,8 +18,11 @@ class HomeViewModel @Inject constructor(
     private val getSduiScreenUseCase: GetSduiScreenUseCase
 ) : ViewModel() {
 
-    private val _UiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
-    val uiState: StateFlow<HomeUiState> = _UiState.asStateFlow()
+    private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     init {
         fetcHomeScreen()
@@ -27,14 +30,15 @@ class HomeViewModel @Inject constructor(
 
     private fun fetcHomeScreen() {
         viewModelScope.launch {
-            _UiState.value = HomeUiState.Loading
+            _uiState.value = HomeUiState.Loading
             getSduiScreenUseCase("home").collect { result ->
                 result.fold(
                     onSuccess = { sduiScreen ->
-                        _UiState.value = HomeUiState.Success(sduiScreen)
+                        _uiState.value = HomeUiState.Success(sduiScreen)
                     },
                     onFailure = { error ->
-                        _UiState.value = HomeUiState.Error(error.message ?: "Unknown Error Ocurred")
+                        _uiState.value =
+                            HomeUiState.Error(error.message ?: "Unknown Error Occurred")
                     }
                 )
             }
@@ -45,6 +49,21 @@ class HomeViewModel @Inject constructor(
         when (action) {
             is NavigationAction -> {
                 println("Navigation Triggered: Destination = ${action.destination}, Params = ${action.params}")
+            }
+        }
+    }
+
+    fun refreshScreen() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                getSduiScreenUseCase("home").collect { result ->
+                    _uiState.value = HomeUiState.Success(result.getOrThrow())
+                    _isRefreshing.value = false
+                }
+            } catch (e: Exception) {
+                _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
+                _isRefreshing.value = false
             }
         }
     }
