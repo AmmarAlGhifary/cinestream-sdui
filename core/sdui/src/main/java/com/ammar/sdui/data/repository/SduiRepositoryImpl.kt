@@ -12,8 +12,8 @@ class SduiRepositoryImpl @Inject constructor(
     private val networkDataSource: NetworkDataSource,
     private val json: Json
 ) : SduiRepository {
-    override fun getScreen(screenId: String): Flow<Result<SduiScreen>> {
-        return networkDataSource.getScreenBlueprint(screenId).map { result ->
+    override fun getScreen(screenId: String, params: Map<String, String>): Flow<Result<SduiScreen>> {
+        return networkDataSource.getScreenBlueprint(screenId, params).map { result ->
             result.fold(
                 onSuccess = { jsonString ->
                     try {
@@ -28,4 +28,5 @@ class SduiRepositoryImpl @Inject constructor(
                 })
         }
     }
+
 }
