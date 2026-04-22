@@ -1,76 +1,47 @@
-# CineStream
+# CineStream Android Client
 
-A full-stack project demonstrating a Server-Driven UI (SDUI) architecture. The project consists of a native Android application and a dedicated Backend-for-Frontend (BFF) that dictates the UI layout, navigation, and content dynamically.
+This is the native Android frontend for CineStream, an app I built to explore Server-Driven UI (SDUI) for my thesis. 
 
-## Architecture Overview
+Instead of hardcoding screens and layouts directly in the Android code, this app acts as a dumb rendering engine. It fetches JSON blueprints from a custom backend and dynamically maps them to Jetpack Compose components. All the layout decisions, navigation paths, and content-heavy lifting are handled by the server.
 
-CineStream shifts the responsibility of UI structure from the client to the server. The Android app acts as a "dumb" rendering engine that parses JSON blueprints and maps them to Jetpack Compose components. The Vercel-hosted BFF handles all business logic, calls the TMDB API for movie data, and constructs the exact UI hierarchy the phone should display.
+## Tech Stack
 
----
+- Kotlin
+- Jetpack Compose (Material 3)
+- Dagger Hilt (Dependency Injection)
+- Kotlin Coroutines & Flow
+- Coil (Image loading)
+- Retrofit & kotlinx.serialization
 
-## 📱 Android Client (Frontend)
+## Project Structure
 
-The Android application is structured as a multi-module project to strictly separate the SDUI rendering engine from feature implementation.
+I set this up as a multi-module project to strictly isolate the SDUI rendering engine from the rest of the app infrastructure.
 
-### Tech Stack
-* **Kotlin**
-* **Jetpack Compose** (Material 3)
-* **Dagger Hilt** (Dependency Injection)
-* **Kotlin Coroutines & Flow** (Asynchronous state management)
-* **Coil** (Image loading)
-* **Retrofit & kotlinx.serialization** (Network and JSON parsing)
+- `app/` - The main entry point, navigation host, and application wiring.
+- `core/sdui/` - The brain of the client. This contains the JSON parsers, models, and the `UiComponentRenderer` that translates server instructions into actual Compose UI.
+- `core/network/` - API clients and data layer.
+- `core/designsystems/` - Reusable Compose components and theme configuration.
+- `feature/*/` - Isolated feature modules for the screens (home, search, detail, movie list). These are very thin, as they mostly just pass the network response to the SDUI renderer.
 
-### Project Structure
-* `app/` - Main entry point, NavHost, and application wiring.
-* `core/sdui/` - The core SDUI parsing and rendering engine (`UiComponentRenderer`).
-* `core/network/` - API clients and data layer.
-* `core/designsystems/` - Reusable Compose components and theme configuration.
-* `feature/*/` - Isolated feature modules (`home`, `search`, `detail`, `listmovie`).
+## Running the App
 
-### Setup & Installation
-1. Open the project in Android Studio.
-2. Sync the project with Gradle files.
-3. Select the `app` configuration and run on an emulator or physical device.
+1. Clone the repository and open it in Android Studio.
+2. Allow the project to sync with Gradle.
+3. Select the `app` run configuration and hit Run on an emulator or physical device.
 
-*(Note: Minimum SDK is 26, Target SDK is 36).*
+Note: Minimum SDK is 26, Target SDK is 36.
 
----
+## The Backend (BFF)
 
-## ⚙️ Backend-for-Frontend (BFF)
+This client requires the Backend-for-Frontend (BFF) server to function, as the server dictates exactly what the app should display. 
 
-**Repository:** [cinestream-sdui-backend](https://github.com/AmmarAlGhifary/cinestream-sdui-backend)
+The backend is built with TypeScript and deployed on Vercel. You can find the repository here: [cinestream-sdui-backend](https://github.com/AmmarAlGhifary/cinestream-sdui-backend)
 
-The BFF acts as the middleware between the Android app and the external TMDB API. It translates raw movie data into structured SDUI JSON blueprints.
+**Local Development Tip:**
+If you want to run the backend locally to test real-time UI changes (skipping the cloud deployment wait time), change the Retrofit Base URL in `NetworkModule.kt` to point to the emulator's localhost alias:
 
-### Tech Stack
-* **TypeScript / Node.js**
-* **Vercel** (Serverless Functions)
-* **Axios** (Data fetching from TMDB)
-
-### Core Endpoints
-* `/api/home` - Generates the main dashboard (Hero banner, Trending carousel, Upcoming carousel).
-* `/api/movie_detail_screen?movie_id={id}` - Generates the layout for a specific movie's details.
-* `/api/movie_list_screen?list_type={type}` - Returns a `vertical_list` blueprint for categories like "trending" or "upcoming".
-* `/api/search?query={text}` - Queries TMDB and returns a `vertical_list` of matching results.
-
-### Setup & Local Development
-To enable rapid, real-time SDUI editing without waiting for cloud deployments, you can run the BFF locally and connect your Android emulator directly to it.
-
-1. Clone the backend repository.
-2. Install dependencies: `npm install`
-3. Start the local Vercel development server:
-   ```bash
-   vercel dev
-   ```
-4. **Android Emulator Connection:** In the Android project's `NetworkModule`, point your Retrofit Base URL to the emulator's localhost alias:
-   ```kotlin
-   .baseUrl("http://10.0.2.2:3000/")
-   ```
-5. Ensure `android:usesCleartextTraffic="true"` is temporarily enabled in your `AndroidManifest.xml` to allow local HTTP traffic during development.
-6. Make changes to your TypeScript files, hit save, and simply "swipe to refresh" on the Android emulator to see instant UI updates.
-
-### Deployment
-To push layout updates to production instantly:
-```bash
-vercel --prod
+```kotlin
+.baseUrl("http://10.0.2.2:3000/")
 ```
+
+Make sure to temporarily enable `android:usesCleartextTraffic="true"` in your `AndroidManifest.xml` so Android allows the local HTTP connection. Once connected, you can change the server code, hit save, and just swipe-to-refresh the app to see instant UI changes.
