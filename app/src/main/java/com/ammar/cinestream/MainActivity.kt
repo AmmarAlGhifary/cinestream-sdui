@@ -12,6 +12,7 @@ import androidx.navigation.navArgument
 import com.ammar.designsystems.theme.CinestreamTheme
 import com.ammar.detail.ui.DetailScreen
 import com.ammar.home.ui.HomeScreen
+import com.ammar.listmovie.ui.ListMovieScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -27,10 +28,14 @@ class MainActivity : ComponentActivity() {
                     navController = navController,
                     startDestination = "home",
                 ) {
+
                     composable("home") {
                         HomeScreen(
                             onNavigateToDetail = { movieId ->
                                 navController.navigate("detail/$movieId")
+                            },
+                            onNavigateToList = { listType ->
+                                navController.navigate("movie_list_screen/$listType")
                             }
                         )
                     }
@@ -42,6 +47,19 @@ class MainActivity : ComponentActivity() {
                         )
                     ) {
                         DetailScreen()
+                    }
+
+                    composable(
+                        route = "movie_list_screen/{list_type}",
+                        arguments = listOf(
+                            navArgument("list_type") { type = NavType.StringType }
+                        )
+                    ) {
+                        ListMovieScreen(
+                            onNavigateToDetail = { movieId ->
+                                navController.navigate("detail/$movieId")
+                            }
+                        )
                     }
                 }
             }
