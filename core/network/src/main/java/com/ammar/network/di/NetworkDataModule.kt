@@ -10,11 +10,11 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class DataSourceModule {
+interface NetworkDataModule {
 
     @Binds
     @Singleton
-    abstract fun bindSduiDataSource(
-        retrofitDataSourceImpl: NetworkDataSourceImpl
+    fun bindNetworkDataSource(
+        networkDataSourceImpl: NetworkDataSourceImpl
     ): NetworkDataSource
 }

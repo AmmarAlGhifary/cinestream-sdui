@@ -105,3 +105,23 @@ data class SduiMovieCard(
     val title: SduiComponent,
     val action: SduiAction? = null
 ) : SduiComponent()
+
+@Serializable
+@SerialName("vertical_list")
+data class SduiVerticalList(
+    @SerialName("list_id")
+    val listId: String? = null,
+    val items: List<SduiListItem>
+) : SduiComponent()
+
+@Serializable
+@SerialName("movie_list_item")
+data class SduiListItem(
+    @SerialName("movie_id")
+    val movieId: String,
+    @SerialName("poster_url")
+    val posterUrl: String,
+    val title: SduiText,
+    val subtitle: SduiText,
+    val action: SduiAction? = null
+) : SduiComponent()
