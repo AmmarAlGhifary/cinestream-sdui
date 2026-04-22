@@ -13,6 +13,7 @@ import com.ammar.designsystems.theme.CinestreamTheme
 import com.ammar.detail.ui.DetailScreen
 import com.ammar.home.ui.HomeScreen
 import com.ammar.listmovie.ui.ListMovieScreen
+import com.ammar.search.ui.SearchScreen
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -36,6 +37,17 @@ class MainActivity : ComponentActivity() {
                             },
                             onNavigateToList = { listType ->
                                 navController.navigate("movie_list_screen/$listType")
+                            },
+                            onNavigateToSearch = {
+                                navController.navigate("search_screen")
+                            }
+                        )
+                    }
+
+                    composable("search_screen") {
+                        SearchScreen(
+                            onNavigateToDetail = { movieId ->
+                                navController.navigate("detail/$movieId")
                             }
                         )
                     }
