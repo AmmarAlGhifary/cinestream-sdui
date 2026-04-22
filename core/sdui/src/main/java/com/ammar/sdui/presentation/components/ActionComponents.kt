@@ -58,7 +58,10 @@ fun SduiIconButtonComponent(
     onAction: (SduiAction) -> Unit
 ) {
     IconButton(
-        onClick = { model.action?.let { onAction(it) } },
+        onClick = { 
+            android.util.Log.d("SduiIconButton", "Clicked: ${model.iconName}, action: ${model.action}")
+            model.action?.let { onAction(it) } 
+        },
         modifier = modifier
     ) {
         // A real app would have an icon mapper here (e.g., mapping "search" string to Icons.Default.Search)

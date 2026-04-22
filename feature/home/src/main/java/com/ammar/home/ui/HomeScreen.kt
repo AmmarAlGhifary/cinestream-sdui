@@ -24,7 +24,13 @@ import com.ammar.sdui.presentation.registry.UiComponentRenderer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltViewModel(), onNavigateToDetail: (String) -> Unit, onNavigateToList: (String) -> Unit) {
+fun HomeScreen(
+    modifier: Modifier = Modifier,
+    viewModel: HomeViewModel = hiltViewModel(),
+    onNavigateToDetail: (String) -> Unit,
+    onNavigateToList: (String) -> Unit,
+    onNavigateToSearch: () -> Unit
+) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
@@ -61,6 +67,9 @@ fun HomeScreen(modifier: Modifier = Modifier, viewModel: HomeViewModel = hiltVie
                             "movie_list_screen" -> {
                                 val listType = action.params?.get("list_type")
                                 if (listType != null) onNavigateToList(listType)
+                            }
+                            "search_screen", "search" -> {
+                                onNavigateToSearch()
                             }
                         }
                     }
