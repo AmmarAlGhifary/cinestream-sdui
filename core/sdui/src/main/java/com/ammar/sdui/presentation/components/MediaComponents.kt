@@ -15,12 +15,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ammar.sdui.domain.model.SduiAction
@@ -28,6 +37,7 @@ import com.ammar.sdui.domain.model.SduiFeaturedHero
 import com.ammar.sdui.domain.model.SduiMovieCard
 import com.ammar.sdui.domain.model.SduiMovieCarousel
 import com.ammar.sdui.domain.model.SduiText
+import com.ammar.sdui.domain.model.SduiToolbarTitle
 import com.ammar.sdui.presentation.registry.UiComponentRenderer
 
 @Composable
@@ -46,9 +56,9 @@ fun SduiFeaturedHeroCompoent(
                 .height(250.dp)
                 .background(Color.DarkGray)
         )
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(10.dp)) {
             UiComponentRenderer(component = model.title, onAction = onAction)
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(5.dp))
             UiComponentRenderer(component = model.description, onAction = onAction)
 
             Row(
@@ -71,8 +81,8 @@ fun SduiMovieCarouselComponent(
 ) {
     LazyRow(
         modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(model.items) { items ->
             UiComponentRenderer(component = items, onAction = onAction)
@@ -88,8 +98,10 @@ fun SduiMovieCardComponent(
 ) {
     Card(
         modifier = modifier
-            .width(120.dp)
-            .clickable { model.action?.let { onAction(it) } }
+            .width(130.dp)
+            .clickable { model.action?.let { onAction(it) } },
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(0.3f))
     ) {
         Column {
             AsyncImage(
@@ -99,10 +111,19 @@ fun SduiMovieCardComponent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(180.dp)
-                    .background(Color.DarkGray)
+                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
             )
-            Box(modifier = Modifier.padding(8.dp)) {
-                UiComponentRenderer(component = model.title, onAction = onAction)
+            Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 12.dp)) {
+                if (model.title is SduiText) {
+                    Text(
+                        text = model.title.textContent,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis)
+                } else {
+                    UiComponentRenderer(component = model.title, onAction = onAction)
+                }
             }
         }
     }
@@ -112,6 +133,33 @@ fun SduiMovieCardComponent(
 fun SdUiTextComponent(model: SduiText, modifier: Modifier = Modifier) {
     Text(
         text = model.textContent,
-        modifier = modifier.padding(8.dp)
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.onBackground
+    )
+}
+
+@Composable
+fun SduiToolbarTitleComponent(
+    model: SduiToolbarTitle,
+    modifier: Modifier = Modifier
+) {
+    val textAlign = when (model.alignment) {
+        "center" -> TextAlign.Center
+        "end" -> TextAlign.End
+        else -> TextAlign.Start
+    }
+
+    val textStyle = when (model.style) {
+        "subtitle" -> MaterialTheme.typography.titleMedium
+        else -> MaterialTheme.typography.titleLarge // Default
+    }
+
+    Text(
+        text = model.textContent,
+        modifier = modifier.fillMaxWidth(),
+        textAlign = textAlign,
+        style = textStyle,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onBackground
     )
 }

@@ -9,7 +9,8 @@ private val CinestreamColorScheme = darkColorScheme(
     background = CinestreamDarkBackground,
     surface = CinestreamSurface,
     onBackground = CinestreamTextWhite,
-    onSurface = CinestreamTextWhite
+    onSurface = CinestreamTextWhite,
+    secondary = CinestreamTextSecondary
 )
 
 @Composable

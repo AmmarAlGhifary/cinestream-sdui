@@ -23,6 +23,7 @@ import com.ammar.sdui.domain.model.SduiScreen
 import com.ammar.sdui.domain.model.SduiSectionHeader
 import com.ammar.sdui.domain.model.SduiText
 import com.ammar.sdui.domain.model.SduiTextButton
+import com.ammar.sdui.domain.model.SduiToolbarTitle
 import com.ammar.sdui.domain.model.SduiVerticalList
 import com.ammar.sdui.presentation.components.SdUiTextComponent
 import com.ammar.sdui.presentation.components.SduiAppBarComponent
@@ -36,7 +37,8 @@ import com.ammar.sdui.presentation.components.SduiMovieCarouselComponent
 import com.ammar.sdui.presentation.components.SduiScreenComponent
 import com.ammar.sdui.presentation.components.SduiSectionHeaderComponent
 import com.ammar.sdui.presentation.components.SduiTextButtonComponent
-import com.ammar.sdui.presentation.components.SduiVerticalList
+import com.ammar.sdui.presentation.components.SduiToolbarTitleComponent
+import com.ammar.sdui.presentation.components.SduiVerticalListComponent
 
 @Composable
 fun UiComponentRenderer(
@@ -52,12 +54,15 @@ fun UiComponentRenderer(
         is SduiColumn -> SduiColumnComponent(component, modifier, onAction)
         is SduiAppBar -> SduiAppBarComponent(component, modifier, onAction)
         is SduiSectionHeader -> SduiSectionHeaderComponent(component, modifier, onAction)
-        is SduiVerticalList -> SduiVerticalList(model = component, modifier = modifier, onAction = onAction)
         is SduiListItem -> SduiListItemComponent(model = component, modifier = modifier, onAction = onAction)        //Content and Media
-        is SduiFeaturedHero -> SduiFeaturedHeroCompoent(component, modifier, onAction)
         is SduiMovieCarousel -> SduiMovieCarouselComponent(component, modifier, onAction)
-        is SduiMovieCard -> SduiMovieCardComponent(component, modifier, onAction)
+        is SduiFeaturedHero -> SduiFeaturedHeroCompoent(component, modifier, onAction)
+
+        // Components
         is SduiText -> SdUiTextComponent(model = component, modifier = modifier)
+        is SduiMovieCard -> SduiMovieCardComponent(component, modifier, onAction)
+        is SduiVerticalList -> SduiVerticalListComponent (model = component, modifier = modifier, onAction = onAction)
+        is SduiToolbarTitle -> SduiToolbarTitleComponent(model = component, modifier = modifier)
 
         // Interactions
         is SduiButton -> SduiButtonComponent(component, modifier, onAction)

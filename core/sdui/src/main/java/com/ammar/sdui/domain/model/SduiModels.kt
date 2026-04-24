@@ -79,6 +79,15 @@ data class SduiSectionHeader(
 ) : SduiComponent()
 
 @Serializable
+@SerialName("toolbar_title")
+data class SduiToolbarTitle(
+    @SerialName("text_content")
+    val textContent: String,
+    val alignment: String? = "start", // Optional nanti di hapus atau gimanain dah
+    val style: String? = "headline"
+) : SduiComponent()
+
+@Serializable
 @SerialName("text_button")
 data class SduiTextButton(
     val text: String,
