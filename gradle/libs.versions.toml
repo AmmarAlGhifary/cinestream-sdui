@@ -25,7 +25,7 @@ activity = "1.12.2"
 constraintlayout = "2.2.1"
 
 googleServices = "4.4.4"
-foundation = "1.10.4"
+foundation = "1.11.0"
 okhttp = "4.12.0"
 
 

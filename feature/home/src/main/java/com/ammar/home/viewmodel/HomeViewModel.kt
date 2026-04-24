@@ -3,8 +3,6 @@ package com.ammar.home.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ammar.home.state.HomeUiState
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.domain.model.SduiAction
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,15 +42,6 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
-
-    fun handleAction(action: SduiAction) {
-        when (action) {
-            is NavigationAction -> {
-                println("Navigation Triggered: Destination = ${action.destination}, Params = ${action.params}")
-            }
-        }
-    }
-
     fun refreshScreen() {
         viewModelScope.launch {
             _isRefreshing.value = true

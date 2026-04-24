@@ -25,9 +25,12 @@ class DetailViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private var currentMovieId: String? = null
+
     init {
         val movieId = savedStateHandle.get<String>("movie_id")
         if (movieId != null) {
+            currentMovieId = movieId
             fetchDetailScreen(movieId)
         } else {
             _uiState.value = DetailUiState.Error("Movie ID is missing from navigation")
@@ -58,5 +61,29 @@ class DetailViewModel @Inject constructor(
         println("Action triggered on Detail Screen: $action")
     }
 
-
+    fun refreshScreen() {
+        val movieId = currentMovieId ?: return
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            try {
+                getSduiScreenUseCase(
+                    screenID = "movie_detail_screen",
+                    params = mapOf("movie_id" to movieId)
+                ).collect { result ->
+                    result.fold(
+                        onSuccess = { sduiScreen ->
+                            _uiState.value = DetailUiState.Success(sduiScreen)
+                        },
+                        onFailure = { error ->
+                            _uiState.value = DetailUiState.Error(error.message ?: "Unknown error")
+                        }
+                    )
+                    _isRefreshing.value = false
+                }
+            } catch (e: Exception) {
+                _uiState.value = DetailUiState.Error(e.message ?: "Unknown error")
+                _isRefreshing.value = false
+            }
+        }
+    }
 }

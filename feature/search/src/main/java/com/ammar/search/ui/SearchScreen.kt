@@ -47,7 +47,6 @@ fun SearchScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            // 2. Style the TextField to match your dark UI
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.onQueryChanged(it) },
@@ -76,7 +75,7 @@ fun SearchScreen(
                         Text(
                             text = "Type a movie name to search...",
                             modifier = Modifier.align(Alignment.Center),
-                            color = MaterialTheme.colorScheme.onBackground // Explicitly use theme text color
+                            color = MaterialTheme.colorScheme.onBackground
                         )
                     }
                     is SearchUiState.Loading -> {

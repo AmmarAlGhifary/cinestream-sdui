@@ -1,5 +1,6 @@
 package com.ammar.cinestream.core.network.di
 
+import com.ammar.cinestream.core.network.BuildConfig
 import com.ammar.cinestream.core.network.source.SduiApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
@@ -45,7 +46,7 @@ object NetworkModule {
         val contentType = "application/json".toMediaType()
 
         return Retrofit.Builder()
-            .baseUrl("https://sdui-backend.vercel.app/")
+            .baseUrl(BuildConfig.BASE_URL)
             .client(okHttpClient)
             .addConverterFactory(json.asConverterFactory(contentType))
             .build()

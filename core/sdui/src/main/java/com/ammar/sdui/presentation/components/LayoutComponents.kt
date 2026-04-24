@@ -104,7 +104,7 @@ fun SduiColumnComponent(
 }
 
 @Composable
-fun SduiVerticalList(
+fun SduiVerticalListComponent(
     model: SduiVerticalList,
     modifier: Modifier = Modifier,
     onAction: (SduiAction) -> Unit
@@ -133,7 +133,7 @@ fun SduiListItemComponent(
                 model.action?.let { onAction(it) }
             },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            containerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
