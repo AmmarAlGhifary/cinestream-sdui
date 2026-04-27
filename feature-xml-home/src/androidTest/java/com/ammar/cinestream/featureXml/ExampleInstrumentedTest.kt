@@ -1,4 +1,4 @@
-package com.ammar.cinestream.feature_xml_home
+package com.ammar.cinestream.featureXml
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

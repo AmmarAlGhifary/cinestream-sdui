@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.ammar.cinestream.feature_xml_home"
+    namespace = "com.ammar.cinestream.featureXml"
     compileSdk {
         version = release(36)
     }
