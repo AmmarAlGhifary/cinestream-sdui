@@ -38,10 +38,10 @@ This client requires the Backend-for-Frontend (BFF) server to function, as the s
 The backend is built with TypeScript and deployed on Vercel. You can find the repository here: [cinestream-sdui-backend](https://github.com/AmmarAlGhifary/cinestream-sdui-backend)
 
 **Local Development Tip:**
-If you want to run the backend locally to test real-time UI changes (skipping the cloud deployment wait time), change the Retrofit Base URL in `NetworkModule.kt` to point to the emulator's localhost alias:
+If you want to run the backend locally to test real-time UI changes, change the Retrofit Base URL in `gradle.properties` to point to the emulator's localhost alias:
 
 ```kotlin
 .baseUrl("http://10.0.2.2:3000/")
 ```
 
-Make sure to temporarily enable `android:usesCleartextTraffic="true"` in your `AndroidManifest.xml` so Android allows the local HTTP connection. Once connected, you can change the server code, hit save, and just swipe-to-refresh the app to see instant UI changes.
+Make sure to temporarily enable `android:usesCleartextTraffic="true"` in your `AndroidManifest.xml` so Android allows the local HTTP connection. Once connected, you can change the server code, hit save, and swipe to refresh the app to see instant UI changes.
