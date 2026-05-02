@@ -13,11 +13,7 @@ Instead of hardcoding screens and layouts, this app is essentially a flexible re
 
 ## Project Structure
 The app uses a multi-module setup to strictly isolate the SDUI rendering engine from the rest of the infrastructure:
-*   `app/` - Main entry point and application wiring.
-*   `core/sdui/` - The brain of the client. Holds the JSON parsers, models, and the `UiComponentRenderer` that translates server instructions into actual UI.
-*   `core/network/` - API clients and data layer.
-*   `core/designsystems/` - Reusable Compose components and theming.
-*   `feature/*/` - Isolated, super-thin feature modules (home, search, details). They mostly just pass network responses straight to the SDUI renderer.
+Refer to the [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)
 
 ## The Backend (BFF)
 Because this is an SDUI app, it relies entirely on its Backend-for-Frontend (BFF) server to function. The backend is built with TypeScript and deployed on Vercel.
