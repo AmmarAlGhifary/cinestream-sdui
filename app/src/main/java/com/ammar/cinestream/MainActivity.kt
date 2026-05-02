@@ -9,7 +9,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.ammar.designsystems.theme.CinestreamTheme
+import com.ammar.designsystems.CinestreamTheme
 import com.ammar.detail.ui.DetailScreen
 import com.ammar.home.ui.HomeScreen
 import com.ammar.listmovie.ui.ListMovieScreen
