@@ -1,6 +1,5 @@
 package com.ammar.listmovie.viewmodel
 
-import androidx.compose.runtime.MutableState
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,16 +28,24 @@ class ListMovieViewModel @Inject constructor(
 
     init {
         val listType = savedStateHandle.get<String>("list_type")
+        val movieId = savedStateHandle.get<String>("movie_id")
+
         if (listType != null) {
-            fetchListMovie(listType)
+            fetchListMovie(listType, movieId)
         } else {
             _uiState.value = ListMovieUiState.Error("Missing list_type parameter")
         }
     }
-    private fun fetchListMovie(listType : String) {
+
+    private fun fetchListMovie(listType : String, movieId: String?) {
         viewModelScope.launch {
             _uiState.value = ListMovieUiState.Loading
-            getSduiScreenUseCase("movie_list_screen", params = mapOf("list_type" to listType)).collect { result ->
+            val queryParams = mutableMapOf("list_type" to listType)
+            if (movieId != null) {
+                queryParams["movie_id"] = movieId
+            }
+
+            getSduiScreenUseCase("movie_list_screen", params = queryParams).collect { result ->
                 result.fold(
                     onSuccess = { sduiScreen ->
                         _uiState.value = ListMovieUiState.Success(sduiScreen)
@@ -56,6 +63,7 @@ class ListMovieViewModel @Inject constructor(
             is NavigationAction -> {
                 println("Navigation Triggered: Destination = ${action.destination}, Params = ${action.params}")
             }
+            else -> {}
         }
     }
 
@@ -63,11 +71,17 @@ class ListMovieViewModel @Inject constructor(
         viewModelScope.launch {
             _isRefreshing.value = true
             val listType = savedStateHandle.get<String>("list_type") ?: "trending"
+            val movieId = savedStateHandle.get<String>("movie_id")
+
+            val queryParams = mutableMapOf("list_type" to listType)
+            if (movieId != null) {
+                queryParams["movie_id"] = movieId
+            }
 
             try {
                 getSduiScreenUseCase(
                     screenID = "movie_list_screen",
-                    params = mapOf("list_type" to listType)
+                    params = queryParams
                 ).collect { result ->
                     _uiState.value = ListMovieUiState.Success(result.getOrThrow())
                     _isRefreshing.value = false

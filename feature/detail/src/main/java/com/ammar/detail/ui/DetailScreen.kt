@@ -22,7 +22,12 @@ import com.ammar.sdui.presentation.registry.UiComponentRenderer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScreen(modifier: Modifier = Modifier, viewModel: DetailViewModel = hiltViewModel()) {
+fun DetailScreen(
+    modifier: Modifier = Modifier,
+    viewModel: DetailViewModel = hiltViewModel(),
+    onNavigateToDetail: (String) -> Unit,
+    onNavigateToList : (String, String?) -> Unit) {
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
 
@@ -42,7 +47,13 @@ fun DetailScreen(modifier: Modifier = Modifier, viewModel: DetailViewModel = hil
                 UiComponentRenderer(
                     modifier = modifier.fillMaxSize(),
                     component = state.screen,
-                    onAction = viewModel::handleAction)
+                    onAction = { action ->
+                        viewModel.handleAction(
+                            action = action,
+                            onNavigateToDetail = onNavigateToDetail,
+                            onNavigateToList = onNavigateToList
+                        )
+                    })
             }
 
             is DetailUiState.Error -> {
