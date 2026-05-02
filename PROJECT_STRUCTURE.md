@@ -4,11 +4,11 @@ This project is a multi-module Android application using a Server-Driven UI (SDU
 
 ## Modules Overview
 
-### 📱 `app`
+### `app`
 The main entry point of the application. It acts as the wiring module that brings all features and core components together.
 - **`com.ammar.cinestream`**: Contains application-level configurations, Dependency Injection (DI) setup, and main activity.
 
-### 🧩 `core`
+### `core`
 Contains reusable components, foundational libraries, and data layer logic shared across multiple features.
 
 * **`core:sdui`** (Server-Driven UI Engine)
@@ -28,7 +28,7 @@ Contains reusable components, foundational libraries, and data layer logic share
   Houses the common UI elements, typography, colors, and theming.
   - **`theme`**: Contains Compose theme definitions, color palettes, and typography used globally.
 
-### 🌟 `feature`
+###  `feature`
 Isolated feature modules that implement specific screens or flows. Each feature strictly follows an MVVM architecture pattern.
 
 * **`feature:home`**
