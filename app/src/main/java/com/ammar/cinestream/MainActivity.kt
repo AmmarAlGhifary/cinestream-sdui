@@ -58,20 +58,30 @@ class MainActivity : ComponentActivity() {
                             navArgument("movie_id") { type = NavType.StringType }
                         )
                     ) {
-                        DetailScreen()
+                        DetailScreen(
+                            onNavigateToDetail = { movieId ->
+                                navController.navigate("detail/$movieId")
+                            },
+                            onNavigateToList = { listType, movieId ->
+                                navController.navigate("movie_list_screen/$listType?movie_id=$movieId")
+                            })
                     }
 
                     composable(
-                        route = "movie_list_screen/{list_type}",
+                        route = "movie_list_screen/{list_type}?movie_id={movie_id}",
                         arguments = listOf(
-                            navArgument("list_type") { type = NavType.StringType }
+                            navArgument("list_type") { type = NavType.StringType },
+                            navArgument("movie_id") {
+                                type = NavType.StringType
+                                nullable = true
+                                defaultValue = null
+                            }
                         )
                     ) {
                         ListMovieScreen(
                             onNavigateToDetail = { movieId ->
                                 navController.navigate("detail/$movieId")
-                            }
-                        )
+                            })
                     }
                 }
             }

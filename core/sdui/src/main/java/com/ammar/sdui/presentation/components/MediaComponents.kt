@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,12 +27,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.ammar.sdui.domain.model.SduiAction
 import com.ammar.sdui.domain.model.SduiFeaturedHero
+import com.ammar.sdui.domain.model.SduiFeaturedHeroDetail
 import com.ammar.sdui.domain.model.SduiMovieCard
 import com.ammar.sdui.domain.model.SduiMovieCarousel
 import com.ammar.sdui.domain.model.SduiText
@@ -41,7 +39,7 @@ import com.ammar.sdui.domain.model.SduiToolbarTitle
 import com.ammar.sdui.presentation.registry.UiComponentRenderer
 
 @Composable
-fun SduiFeaturedHeroCompoent(
+fun SduiFeaturedHeroComponent(
     model: SduiFeaturedHero,
     modifier: Modifier = Modifier,
     onAction: (SduiAction) -> Unit
@@ -70,6 +68,31 @@ fun SduiFeaturedHeroCompoent(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun SduiFeatureHeroDetailComponent(
+    model: SduiFeaturedHeroDetail,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        AsyncImage(
+            model.imageUrl,
+            contentDescription = "Featured Hero Image",
+            contentScale = ContentScale.Crop,
+            modifier = modifier
+                .fillMaxWidth()
+                .height(250.dp)
+                .background(Color.DarkGray)
+        )
+    }
+    Column(modifier = Modifier.padding(10.dp)) {
+        UiComponentRenderer(component = model.title)
+        Spacer(modifier = Modifier.height(5.dp))
+        UiComponentRenderer(component = model.description1, onAction = {})
+        UiComponentRenderer(component = model.description2, onAction = {})
+        UiComponentRenderer(component = model.description3, onAction = {})
     }
 }
 
@@ -133,7 +156,8 @@ fun SduiMovieCardComponent(
 fun SdUiTextComponent(model: SduiText, modifier: Modifier = Modifier) {
     Text(
         text = model.textContent,
-        modifier = modifier,
+        modifier = modifier.padding(start = 10.dp),
+        style = MaterialTheme.typography.bodyMedium,
         color = MaterialTheme.colorScheme.onBackground
     )
 }
