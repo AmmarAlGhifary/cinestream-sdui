@@ -1,4 +1,4 @@
-package com.ammar.designsystems.theme
+package com.ammar.designsystems
 
 import androidx.compose.ui.graphics.Color
 

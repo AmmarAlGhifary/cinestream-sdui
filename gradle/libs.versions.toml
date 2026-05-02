@@ -24,7 +24,6 @@ material = "1.13.0"
 activity = "1.12.2"
 constraintlayout = "2.2.1"
 
-googleServices = "4.4.4"
 foundation = "1.11.0"
 okhttp = "4.12.0"
 
@@ -76,4 +75,3 @@ jetbrains-kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serializati
 google-dagger-hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
 google-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 android-library = { id = "com.android.library", version.ref = "agp" }
-google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }

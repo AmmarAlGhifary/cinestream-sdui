@@ -6,12 +6,11 @@ Instead of hardcoding screens and layouts directly in the Android code, this app
 
 ## Tech Stack
 
-### Tech Stack
 - Kotlin
 - Jetpack Compose (Material 3)
 - Dagger Hilt
-- Jetpack Compose
-- Dagger Hilt for Dependency Injection
+- Jetpack Compose (Material 3)
+- Dagger Hilt (Dependency Injection)
 - Kotlin Coroutines & Flow
 - Coil
 - Retrofit & kotlinx.serialization
@@ -25,7 +24,28 @@ Instead of hardcoding screens and layouts directly in the Android code, this app
 *(Minimum SDK: 26, Target SDK: 36)*
 
 ## The Backend (BFF)
-- Coil for image loading
+- Coil (Image loading)
+- Retrofit & kotlinx.serialization
+
+## Project Structure
+
+I set this up as a multi-module project to strictly isolate the SDUI rendering engine from the rest of the app infrastructure.
+
+- `app/` - The main entry point, navigation host, and application wiring.
+- `core/sdui/` - The brain of the client. This contains the JSON parsers, models, and the `UiComponentRenderer` that translates server instructions into actual Compose UI.
+- `core/network/` - API clients and data layer.
+- `core/designsystems/` - Reusable Compose components and theme configuration.
+- `feature/*/` - Isolated feature modules for the screens (home, search, detail, movie list). These are very thin, as they mostly just pass the network response to the SDUI renderer.
+
+## Running the App
+
+1. Clone the repository and open it in Android Studio.
+2. Allow the project to sync with Gradle.
+3. Select the `app` run configuration and hit Run on an emulator or physical device.
+
+Note: Minimum SDK is 26, Target SDK is 36.
+
+## The Backend (BFF)
 
 This client requires the Backend-for-Frontend (BFF) server to function. The backend dictates exactly what the app should display.
 ### Project Structure
@@ -44,4 +64,5 @@ To run the backend locally and test real-time UI changes, update the Retrofit Ba
 .baseUrl("http://10.0.2.2:3000/")
 ```
 
-Make sure to temporarily enable `android:usesCleartextTraffic="true"` in your `AndroidManifest.xml`. Once connected, you can change the server code, save, and swipe-to-refresh the app to see instant UI changes.
+Minimum SDK: 26
+Target SDK: 36

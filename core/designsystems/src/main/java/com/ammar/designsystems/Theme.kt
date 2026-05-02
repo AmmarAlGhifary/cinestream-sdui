@@ -1,4 +1,4 @@
-package com.ammar.designsystems.theme
+package com.ammar.designsystems
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
