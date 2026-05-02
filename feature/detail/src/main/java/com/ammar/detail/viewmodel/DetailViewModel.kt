@@ -4,7 +4,10 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ammar.detail.state.DetailUiState
+import com.ammar.sdui.domain.model.ApiAction
+import com.ammar.sdui.domain.model.NavigationAction
 import com.ammar.sdui.domain.model.SduiAction
+import com.ammar.sdui.domain.model.ShareAction
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -57,8 +60,32 @@ class DetailViewModel @Inject constructor(
         }
     }
 
-    fun handleAction(action: SduiAction) {
-        println("Action triggered on Detail Screen: $action")
+    fun handleAction(
+        action: SduiAction,
+        onNavigateToDetail: (String) -> Unit,
+        onNavigateToList: (String, String?) -> Unit
+    ) {
+        when (action) {
+            is NavigationAction -> {
+                when (action.destination) {
+                    "movie_detail_screen" -> {
+                        val movieId = action.params?.get("movie_id")
+                        if (movieId != null) onNavigateToDetail(movieId)
+                    }
+                    "movie_list_screen" -> {
+                        val listType = action.params?.get("list_type")
+                        val movieId = action.params?.get("movie_id") // Needed for "similar" lists
+                        if (listType != null) onNavigateToList(listType, movieId)
+                    }
+                }
+            }
+            is ApiAction -> {
+                android.util.Log.d("SduiAction", "Executing API Call: ${action.method} ${action.endpoint}")
+            }
+            is ShareAction -> {
+                android.util.Log.d("SduiAction", "Sharing content: ${action.content}")
+            }
+        }
     }
 
     fun refreshScreen() {

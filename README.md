@@ -1,18 +1,33 @@
-# CineStream Android
+# CineStream Android Client
 
-An Android application that uses a Server-Driven UI (SDUI) approach to render its interface dynamically. 
+This is the native Android frontend for CineStream, built to explore Server-Driven UI (SDUI) for my thesis.
 
-## Project Overview
+Instead of hardcoding screens and layouts directly in the Android code, this app acts as a rendering engine. It fetches JSON blueprints from a custom backend and dynamically maps them to Jetpack Compose components. All layout decisions, navigation paths, and content logic are handled by the server.
 
-CineStream is structured as a multi-module project to separate core infrastructure from feature implementation. The main focus is on the `core:sdui` module, which handles parsing server responses into native Jetpack Compose UI components.
+## Tech Stack
 
 ### Tech Stack
 - Kotlin
+- Jetpack Compose (Material 3)
+- Dagger Hilt
 - Jetpack Compose
 - Dagger Hilt for Dependency Injection
 - Kotlin Coroutines & Flow
+- Coil
+- Retrofit & kotlinx.serialization
+
+## Running the App
+
+1. Clone the repository and open it in Android Studio.
+2. Sync the project with Gradle.
+3. Select the `app` run configuration and hit Run on an emulator or physical device.
+
+*(Minimum SDK: 26, Target SDK: 36)*
+
+## The Backend (BFF)
 - Coil for image loading
 
+This client requires the Backend-for-Frontend (BFF) server to function. The backend dictates exactly what the app should display.
 ### Project Structure
 - `app/` - Main entry point and application wiring
 - `core/sdui/` - SDUI parsing and rendering engine
@@ -20,11 +35,13 @@ CineStream is structured as a multi-module project to separate core infrastructu
 - `core/designsystems/` - Reusable Compose components and theme
 - `feature/*/` - Isolated feature modules (home, search, movie details, list)
 
-## Setup
+The backend is built with TypeScript and deployed on Vercel. 
+Repository: [cinestream-sdui-backend](https://github.com/AmmarAlGhifary/cinestream-sdui-backend)
 
-1. Open the project in Android Studio.
-2. Sync the project with Gradle files.
-3. Select the `app` configuration and run.
+**Local Development:**
+To run the backend locally and test real-time UI changes, update the Retrofit Base URL in `NetworkModule.kt` to point to the emulator's localhost alias:
+```kotlin
+.baseUrl("http://10.0.2.2:3000/")
+```
 
-Minimum SDK: 26
-Target SDK: 36
+Make sure to temporarily enable `android:usesCleartextTraffic="true"` in your `AndroidManifest.xml`. Once connected, you can change the server code, save, and swipe-to-refresh the app to see instant UI changes.
