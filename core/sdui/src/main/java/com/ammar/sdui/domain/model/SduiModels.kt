@@ -63,6 +63,17 @@ data class SduiFeaturedHero(
 ) : SduiComponent()
 
 @Serializable
+@SerialName("featured_hero_detail")
+data class SduiFeaturedHeroDetail(
+    @SerialName("image_url")
+    val imageUrl: String,
+    val title: SduiComponent,
+    val description1: SduiComponent,
+    val description2: SduiComponent,
+    val description3: SduiComponent,
+) : SduiComponent()
+
+@Serializable
 @SerialName("button")
 data class SduiButton(
     val text: String,
@@ -78,6 +89,35 @@ data class SduiSectionHeader(
     val actionButton: SduiComponent? = null
 ) : SduiComponent()
 
+@Serializable
+@SerialName("section_header_detail")
+data class SduiSectionHeaderDetail(
+    val title: SduiComponent,
+) : SduiComponent()
+
+@Serializable
+@SerialName("toolbar_title")
+data class SduiToolbarTitle(
+    @SerialName("text_content")
+    val textContent: String,
+    val alignment: String? = "start", // Optional nanti di hapus atau gimanain dah
+    val style: String? = "headline"
+) : SduiComponent()
+
+
+@Serializable
+@SerialName("api_action")
+data class ApiAction(
+    val endpoint: String,
+    val method: String,
+    val body: Map<String, String>? = null
+) : SduiAction()
+
+@Serializable
+@SerialName("share_action")
+data class ShareAction(
+    val content: String
+) : SduiAction()
 @Serializable
 @SerialName("text_button")
 data class SduiTextButton(

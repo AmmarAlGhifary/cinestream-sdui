@@ -1,4 +1,4 @@
-package com.ammar.designsystems.theme
+package com.ammar.designsystems
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -9,7 +9,8 @@ private val CinestreamColorScheme = darkColorScheme(
     background = CinestreamDarkBackground,
     surface = CinestreamSurface,
     onBackground = CinestreamTextWhite,
-    onSurface = CinestreamTextWhite
+    onSurface = CinestreamTextWhite,
+    secondary = CinestreamTextSecondary
 )
 
 @Composable

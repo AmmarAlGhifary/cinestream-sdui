@@ -1,24 +1,35 @@
 package com.ammar.sdui.presentation.components
 
+import android.R.attr.text
+import android.widget.Button
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ammar.sdui.domain.model.SduiAction
 import com.ammar.sdui.domain.model.SduiButton
 import com.ammar.sdui.domain.model.SduiIconButton
 import com.ammar.sdui.domain.model.SduiSectionHeader
+import com.ammar.sdui.domain.model.SduiSectionHeaderDetail
+import com.ammar.sdui.domain.model.SduiText
 import com.ammar.sdui.domain.model.SduiTextButton
 import com.ammar.sdui.presentation.registry.UiComponentRenderer
 
@@ -31,9 +42,13 @@ fun SduiButtonComponent(
 ) {
     Button(
         onClick = { model.action?.let { onAction(it) } },
-        modifier = modifier
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
-        Text(text = model.text)
+        Text(text = model.text, color = MaterialTheme.colorScheme.onBackground)
     }
 }
 
@@ -47,7 +62,7 @@ fun SduiTextButtonComponent(
         onClick = { model.action?.let { onAction(it) } },
         modifier = modifier
     ) {
-        Text(text = model.text)
+        Text(text = model.text, color = MaterialTheme.colorScheme.secondary)
     }
 }
 
@@ -57,16 +72,27 @@ fun SduiIconButtonComponent(
     modifier: Modifier = Modifier,
     onAction: (SduiAction) -> Unit
 ) {
+    val imageVector = when (model.iconName) {
+        "search" -> Icons.Default.Search
+        "favorite_border" -> Icons.Default.FavoriteBorder
+        "share" -> Icons.Default.Share
+        else -> Icons.Default.Warning //Fallback
+    }
     IconButton(
-        onClick = { 
-            android.util.Log.d("SduiIconButton", "Clicked: ${model.iconName}, action: ${model.action}")
-            model.action?.let { onAction(it) } 
+        onClick = {
+            android.util.Log.d(
+                "SduiIconButton",
+                "Clicked: ${model.iconName}, action: ${model.action}"
+            )
+            model.action?.let { onAction(it) }
         },
         modifier = modifier
     ) {
-        // A real app would have an icon mapper here (e.g., mapping "search" string to Icons.Default.Search)
-        // Hardcoding search for the Golden Sample
-        Icon(imageVector = Icons.Default.Search, contentDescription = model.iconName)
+        Icon(
+            imageVector = imageVector,
+            contentDescription = model.iconName,
+            tint = MaterialTheme.colorScheme.onBackground
+        )
     }
 }
 
@@ -77,15 +103,47 @@ fun SduiSectionHeaderComponent(
     onAction: (SduiAction) -> Unit
 ) {
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        UiComponentRenderer(component = model.title, onAction = onAction)
+        if (model.title is SduiText) {
+            Text(
+                text = model.title.textContent,
+                modifier = Modifier.padding(top = 5.dp, start = 3.dp),
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        } else {
+            UiComponentRenderer(component = model.title, onAction = onAction)
+        }
+
         model.actionButton?.let { button ->
             UiComponentRenderer(component = button, onAction = onAction)
+        }
+    }
+}
+
+@Composable
+fun SduiSectionHeaderDetailComponent(
+    model: SduiSectionHeaderDetail,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (model.title is SduiText) {
+            Text(
+                text = model.title.textContent,
+                modifier = Modifier.padding(top = 5.dp, start = 10.dp),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+        } else {
+            UiComponentRenderer(model.title)
         }
     }
 }
