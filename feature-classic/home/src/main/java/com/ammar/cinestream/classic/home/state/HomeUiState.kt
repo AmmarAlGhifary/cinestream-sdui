@@ -1,11 +1,13 @@
 package com.ammar.cinestream.classic.home.state
 
-import android.graphics.Movie
+import com.ammar.network.source.tmdb.dto.TmdbMovieDto
 
-sealed interface HomeUiState {
-    object Loading : HomeUiState
-    data class Success(val movies: List<Movie>) : HomeUiState
-    data class Error(val message: String) : HomeUiState
-
-
+sealed class HomeUiState {
+    object Loading : HomeUiState()
+    data class Success(
+        val heroMovie: TmdbMovieDto,
+        val trendingMovies: List<TmdbMovieDto>,
+        val upcomingMovies: List<TmdbMovieDto>
+    ) : HomeUiState()
+    data class Error(val message: String) : HomeUiState()
 }
