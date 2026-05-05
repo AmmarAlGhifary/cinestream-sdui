@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.google.dagger.hilt)
     alias(libs.plugins.google.ksp)
+    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 android {
@@ -18,6 +19,8 @@ android {
         consumerProguardFiles("consumer-rules.pro")
 
         buildConfigField("String", "BASE_URL", "\"${project.findProperty("BASE_URL")}\"")
+        buildConfigField("String", "BASE_URL_TMDB", "\"${project.findProperty("BASE_URL_TMDB")}\"")
+        buildConfigField("String", "API_KEY_TMDB", "\"${project.findProperty("API_KEY_TMDB")}\"")
     }
 
     buildFeatures {

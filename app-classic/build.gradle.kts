@@ -43,6 +43,8 @@ android {
 
 dependencies {
     implementation(project(":feature-classic:home"))
+    implementation(project(":feature-classic:detail"))
+    implementation(project(":feature-classic:listMovie"))
     implementation(project(":core:network"))
     implementation(project(":core:designsystems"))
 
