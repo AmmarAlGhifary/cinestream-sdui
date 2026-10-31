@@ -1,7 +1,7 @@
 package com.ammar.network.di
 
 import com.ammar.cinestream.core.network.BuildConfig
-import com.ammar.cinestream.core.network.source.SduiApiService
+import com.ammar.network.source.SduiApiService
 import com.ammar.cinestream.core.network.source.tmdb.TmdbApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module

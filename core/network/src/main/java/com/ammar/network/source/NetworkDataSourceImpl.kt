@@ -1,6 +1,5 @@
 package com.ammar.network.source
 
-import com.ammar.cinestream.core.network.source.SduiApiService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -9,9 +8,9 @@ class NetworkDataSourceImpl @Inject constructor(
     private val apiService: SduiApiService
 ) : NetworkDataSource {
 
-    override fun getScreenBlueprint(screenId: String, params: Map<String, String>): Flow<Result<String>> = flow {
+    override fun getScreenBlueprint(screenId: String, queryParams: Map<String, String>): Flow<Result<String>> = flow {
         try {
-            val response = apiService.getScreenBlueprint(screenId, params)
+            val response = apiService.getScreenBlueprint(screenId, queryParams)
 
             if (response.isSuccessful && response.body() != null) {
                 val rawJson = response.body()!!.string()

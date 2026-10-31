@@ -1,57 +1,83 @@
 # Project Structure
 
-This project is a multi-module Android application using a Server-Driven UI (SDUI) approach. The structure is logically separated into `app`, `core`, and `feature` modules.
+This project is a multi-module Android application engineered around a Server-Driven UI (SDUI) architecture, along with a counterpart classic implementation for architectural comparison.
 
-## Modules Overview
+The repository is modularized into `app`, `core`, `feature`, `app-classic`, and `feature-classic` components.
 
-### `app`
-The main entry point of the application. It acts as the wiring module that brings all features and core components together.
-- **`com.ammar.cinestream`**: Contains application-level configurations, Dependency Injection (DI) setup, and main activity.
+---
 
-### `core`
-Contains reusable components, foundational libraries, and data layer logic shared across multiple features.
+## Modules Directory
+
+### 🚀 SDUI Architecture Modules
+
+#### 1. `app`
+The main application entry point and dependency injection root for the SDUI engine.
+- **Package**: `com.ammar.cinestream`
+- **Responsibilities**: Application-level initialization, Dagger Hilt DI container setup, and global navigation wiring (`MainActivity`).
+
+#### 2. `core`
+Reusable foundational libraries and shared data layer logic.
 
 * **`core:sdui`** (Server-Driven UI Engine)
-  The engine responsible for parsing server responses and rendering Jetpack Compose UI dynamically.
-  - **`data/repository`**: Handles fetching SDUI layout responses.
-  - **`domain/model`**: Defines UI component data models.
-  - **`domain/usecase`**: SDUI specific business logic.
-  - **`presentation/components`**: Maps domain models to native Jetpack Compose components.
-  - **`presentation/registry`**: Component registry for dynamic rendering.
+  The core rendering engine responsible for parsing server responses and rendering Jetpack Compose UI dynamically.
+  - `data/repository`: Fetches SDUI JSON blueprints from the network.
+  - `domain/model`: Defines polymorphic SDUI component data models (`SduiScreen`, `SduiComponent`, `SduiAction`).
+  - `domain/usecase`: SDUI business logic and tree validation.
+  - `presentation/components`: Declarative Jetpack Compose component implementations.
+  - `presentation/registry`: Component registry resolving blueprint types to Compose renderers.
 
 * **`core:network`**
-  Handles all external API communications and networking setup.
-  - **`di`**: Network module DI provisioning.
-  - **`source`**: API clients, interceptors, and remote data sources.
+  Handles external API communications and networking infrastructure.
+  - `di`: Network module dependency injection provisioning.
+  - `source`: Retrofit API services, interceptors, and network data sources.
 
 * **`core:designsystems`**
-  Houses the common UI elements, typography, colors, and theming.
-  - **`theme`**: Contains Compose theme definitions, color palettes, and typography used globally.
+  Shared UI design system, tokens, typography, and themes.
+  - `theme`: Compose Material 3 theme definitions, color palettes, and typography used globally.
 
-###  `feature`
-Isolated feature modules that implement specific screens or flows. Each feature strictly follows an MVVM architecture pattern.
+#### 3. `feature`
+Feature modules implementing specific screens driven by the SDUI engine under an MVVM architecture.
 
 * **`feature:home`**
-  - **`state`**: UI states for the home screen.
-  - **`ui`**: Compose screens and layouts for the home feed.
-  - **`viewmodel`**: Handles the business logic for the home feature.
+  - `state`: UI states for the home dashboard.
+  - `ui`: Dynamic home feed containing hero sections and carousels.
+  - `viewmodel`: Coordinates SDUI blueprint fetching and refresh states.
 
 * **`feature:detail`**
-  - **`state`**: UI states for the movie details screen.
-  - **`ui`**: Compose screens for viewing movie specifics.
-  - **`viewmodel`**: Handles the business logic for fetching and displaying movie details.
+  - `state`: UI states for the movie detail screen.
+  - `ui`: Detail view rendering metadata and similar movie carousels.
+  - `viewmodel`: Handles movie-specific blueprint retrieval.
 
 * **`feature:listMovie`**
-  - **`state`**: UI states for movie lists (e.g., categories, see all).
-  - **`ui`**: Compose screens for listing movies.
-  - **`viewmodel`**: Handles pagination and listing logic.
+  - `state`: UI states for movie category lists.
+  - `ui`: Vertical list layouts for categories (Trending, Upcoming, Similar).
+  - `viewmodel`: Handles pagination and query filters.
 
 * **`feature:search`**
-  - **`state`**: UI states for search operations.
-  - **`ui`**: Compose screens for the search bar and results.
-  - **`viewmodel`**: Handles query processing and search results.
+  - `state`: UI states for the search flow.
+  - `ui`: Real-time search query bar and vertical results.
+  - `viewmodel`: Query processing and debounce handling.
+
+---
+
+### 🏛️ Classic Architecture Modules (Comparative Baseline)
+
+Used for empirical comparison in thesis research against traditional native Android development patterns.
+
+#### 1. `app-classic`
+- **Package**: `com.ammar.cinestream.classic`
+- **Responsibilities**: Host application for the hardcoded benchmark application.
+
+#### 2. `feature-classic`
+Feature modules directly consuming REST endpoints (TMDB) with hardcoded UI structures.
+* **`feature-classic:home`**: Hardcoded home screen with static carousel sections.
+* **`feature-classic:detail`**: Hardcoded movie detail screen.
+* **`feature-classic:listMovie`**: Hardcoded category movie list screen.
+
+---
 
 ## Key Architectural Patterns
-- **Modularization**: Separation of concerns by layers (`core`, `feature`) to improve build times, reusability, and maintainability.
-- **Clean Architecture / MVVM**: Each feature module contains `ui`, `state`, and `viewmodel` packages for predictable state management.
-- **Server-Driven UI (SDUI)**: The UI logic and structure can be dynamically controlled by the backend through the `core:sdui` engine.
+
+- **Modularization**: Strict separation of concerns by layers (`core`, `feature`) to improve build speeds, promote reusability, and prevent unintended coupling.
+- **Clean Architecture & MVVM**: Unidirectional data flow (UDF) with immutable UI state and Kotlin Coroutines/Flow.
+- **Server-Driven UI (SDUI)**: Client acts as a declarative rendering runtime, allowing dynamic updates to UI hierarchy, components, and user actions directly from the backend without client application releases.

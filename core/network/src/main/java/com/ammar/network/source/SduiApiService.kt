@@ -1,4 +1,4 @@
-package com.ammar.cinestream.core.network.source
+package com.ammar.network.source
 
 import okhttp3.ResponseBody
 import retrofit2.Response
