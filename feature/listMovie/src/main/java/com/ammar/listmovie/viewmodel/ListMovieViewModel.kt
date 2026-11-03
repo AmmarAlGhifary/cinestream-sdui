@@ -4,8 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ammar.listmovie.state.ListMovieUiState
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.domain.model.SduiAction
+import io.github.ammaralghifary.blueprint.model.NavigateAction
+import io.github.ammaralghifary.blueprint.model.SduiAction
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +60,7 @@ class ListMovieViewModel @Inject constructor(
 
     fun handleAction(action: SduiAction) {
         when (action) {
-            is NavigationAction -> {
+            is NavigateAction -> {
                 println("Navigation Triggered: Destination = ${action.destination}, Params = ${action.params}")
             }
             else -> {}

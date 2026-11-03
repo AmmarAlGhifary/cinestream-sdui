@@ -18,8 +18,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ammar.home.state.HomeUiState
 import com.ammar.home.viewmodel.HomeViewModel
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.model.NavigateAction
+import com.ammar.sdui.presentation.SduiScreenRenderer
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,18 +54,18 @@ fun HomeScreen(
                     )
                 }
             }
-            is HomeUiState.Success -> UiComponentRenderer(
-                component = state.screen,
+            is HomeUiState.Success -> SduiScreenRenderer(
+                screen = state.screen,
                 modifier = Modifier.fillMaxSize(),
                 onAction = { action ->
-                    if (action is NavigationAction) {
+                    if (action is NavigateAction) {
                         when (action.destination){
                             "movie_detail_screen" -> {
-                                val movieId = action.params?.get("movie_id")
+                                val movieId = action.params.get("movie_id")
                                 if (movieId != null) onNavigateToDetail(movieId)
                             }
                             "movie_list_screen" -> {
-                                val listType = action.params?.get("list_type")
+                                val listType = action.params.get("list_type")
                                 if (listType != null) onNavigateToList(listType)
                             }
                             "search_screen", "search" -> {

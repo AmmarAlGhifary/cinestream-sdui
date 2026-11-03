@@ -55,6 +55,9 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
 
+    // Blueprint types (SduiScreen, SduiAction, NavigateAction) are part of this module's API.
+    api(libs.blueprint.core)
+
     implementation(libs.coil.compose)
 
     testImplementation(libs.junit)
