@@ -34,48 +34,33 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.ammar.sdui.domain.model.SduiAction
 import com.ammar.sdui.domain.model.SduiAppBar
 import com.ammar.sdui.domain.model.SduiColumn
 import com.ammar.sdui.domain.model.SduiListItem
-import com.ammar.sdui.domain.model.SduiScreen
+import com.ammar.sdui.domain.model.SduiScaffold
 import com.ammar.sdui.domain.model.SduiVerticalList
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.render.SduiScope
 
 @Composable
-fun SduiScreenComponent(
-    model: SduiScreen,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
-) {
+fun SduiScaffoldComponent(model: SduiScaffold, modifier: Modifier, scope: SduiScope) {
     Scaffold(
         modifier = modifier.fillMaxSize(),
         topBar = {
-            model.toolbar?.let { toolbarComponent ->
-                UiComponentRenderer(component = toolbarComponent, onAction = onAction)
-            }
+            model.toolbar?.let { scope.Render(it) }
         }
     ) { paddingValues ->
         Box(modifier = Modifier.padding(paddingValues)) {
-            UiComponentRenderer(component = model.body, onAction = onAction)
+            scope.Render(model.body)
         }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SduiAppBarComponent(
-    model: SduiAppBar,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
-) {
+fun SduiAppBarComponent(model: SduiAppBar, modifier: Modifier, scope: SduiScope) {
     TopAppBar(
-        title = { UiComponentRenderer(component = model.title, onAction = onAction) },
-        actions = {
-            model.actions?.forEach { actionComponent ->
-                UiComponentRenderer(component = actionComponent, onAction = onAction)
-            }
-        },
+        title = { scope.Render(model.title) },
+        actions = { model.actions.forEach { scope.Render(it) } },
         modifier = modifier,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = colorScheme.background,
@@ -87,51 +72,33 @@ fun SduiAppBarComponent(
 }
 
 @Composable
-fun SduiColumnComponent(
-    model: SduiColumn,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
-) {
+fun SduiColumnComponent(model: SduiColumn, modifier: Modifier, scope: SduiScope) {
     Column(
         modifier = modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
     ) {
-        model.children.forEach { child ->
-            UiComponentRenderer(component = child, onAction = onAction)
-        }
+        scope.RenderAll(model.children)
     }
 }
 
 @Composable
-fun SduiVerticalListComponent(
-    model: SduiVerticalList,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
-) {
+fun SduiVerticalListComponent(model: SduiVerticalList, modifier: Modifier, scope: SduiScope) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(model.items) { item ->
-            UiComponentRenderer(component = item, onAction = onAction)
-        }
+        items(model.items) { item -> scope.Render(item) }
     }
 }
 
 @Composable
-fun SduiListItemComponent(
-    model: SduiListItem,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
-) {
+fun SduiListItemComponent(model: SduiListItem, modifier: Modifier, scope: SduiScope) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .clickable {
-                model.action?.let { onAction(it) }
-            },
+            .clickable { model.action?.let(scope::dispatch) },
         colors = CardDefaults.cardColors(
             containerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f)
         ),
@@ -153,11 +120,9 @@ fun SduiListItemComponent(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = model.title.textContent, // Note: Use camelCase property name
+                    text = model.title.textContent,
                     style = MaterialTheme.typography.titleMedium,
                     color = colorScheme.onSurface,
                     maxLines = 2,
@@ -167,7 +132,7 @@ fun SduiListItemComponent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = model.subtitle.textContent, // Note: Use camelCase property name
+                    text = model.subtitle.textContent,
                     style = MaterialTheme.typography.bodyMedium,
                     color = colorScheme.onSurfaceVariant
                 )

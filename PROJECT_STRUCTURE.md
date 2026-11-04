@@ -18,13 +18,15 @@ The main application entry point and dependency injection root for the SDUI engi
 #### 2. `core`
 Reusable foundational libraries and shared data layer logic.
 
-* **`core:sdui`** (Server-Driven UI Engine)
-  The core rendering engine responsible for parsing server responses and rendering Jetpack Compose UI dynamically.
-  - `data/repository`: Fetches SDUI JSON blueprints from the network.
-  - `domain/model`: Defines polymorphic SDUI component data models (`SduiScreen`, `SduiComponent`, `SduiAction`).
-  - `domain/usecase`: SDUI business logic and tree validation.
-  - `presentation/components`: Declarative Jetpack Compose component implementations.
-  - `presentation/registry`: Component registry resolving blueprint types to Compose renderers.
+* **`core:sdui`** (Server-Driven UI Engine, built on [Blueprint](https://github.com/AmmarAlGhifary/blueprint))
+  Decodes server responses and renders them as Jetpack Compose. Decoding and the render loop come from
+  Blueprint (`io.github.ammaralghifary:blueprint-core`); this module supplies CineStream's vocabulary.
+  - `data/repository`: Fetches SDUI JSON and decodes it with `Blueprint.decodeScreen`. Folds `toolbar` + `body` into a `screen_scaffold` node.
+  - `domain/model`: CineStream component and action models, subclasses of Blueprint's open `SduiComponent` / `SduiAction`.
+  - `domain/usecase`: SDUI business logic.
+  - `presentation/components`: Compose renderers, each receiving Blueprint's `SduiScope` to render children and dispatch actions.
+  - `presentation/registry`: `CineStreamRegistry` binds every JSON `type` to a model and renderer; `CineStreamBlueprint` is the shared instance.
+  - Tolerant decoding: an unknown or malformed node degrades alone (placeholder in debug, nothing in release) and is logged under the `Blueprint` tag.
 
 * **`core:network`**
   Handles external API communications and networking infrastructure.

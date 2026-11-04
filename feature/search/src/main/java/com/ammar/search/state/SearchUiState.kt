@@ -1,6 +1,6 @@
 package com.ammar.search.state
 
-import com.ammar.sdui.domain.model.SduiScreen
+import io.github.ammaralghifary.blueprint.model.SduiScreen
 
 sealed class SearchUiState {
     object Idle : SearchUiState()

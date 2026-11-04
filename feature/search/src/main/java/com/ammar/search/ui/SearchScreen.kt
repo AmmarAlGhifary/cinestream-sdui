@@ -22,8 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.model.NavigateAction
+import com.ammar.sdui.presentation.SduiScreenRenderer
+import com.ammar.sdui.presentation.content
 import com.ammar.search.state.SearchUiState
 import com.ammar.search.viewmodel.SearchViewModel
 
@@ -89,12 +90,12 @@ fun SearchScreen(
                         )
                     }
                     is SearchUiState.Success -> {
-                        UiComponentRenderer(
-                            component = state.screen.body,
+                        SduiScreenRenderer(
+                            component = state.screen.content,
                             modifier = Modifier.fillMaxSize(),
                             onAction = { action ->
-                                if (action is NavigationAction && action.destination == "movie_detail_screen") {
-                                    action.params?.get("movie_id")?.let { onNavigateToDetail(it) }
+                                if (action is NavigateAction && action.destination == "movie_detail_screen") {
+                                    action.params.get("movie_id")?.let { onNavigateToDetail(it) }
                                 }
                             }
                         )

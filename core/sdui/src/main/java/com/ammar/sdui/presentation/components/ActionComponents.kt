@@ -1,7 +1,5 @@
 package com.ammar.sdui.presentation.components
 
-import android.R.attr.text
-import android.widget.Button
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,24 +22,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.ammar.sdui.domain.model.SduiAction
 import com.ammar.sdui.domain.model.SduiButton
 import com.ammar.sdui.domain.model.SduiIconButton
 import com.ammar.sdui.domain.model.SduiSectionHeader
 import com.ammar.sdui.domain.model.SduiSectionHeaderDetail
 import com.ammar.sdui.domain.model.SduiText
 import com.ammar.sdui.domain.model.SduiTextButton
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.render.SduiScope
 
 
 @Composable
 fun SduiButtonComponent(
     model: SduiButton,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
+    modifier: Modifier,
+    scope: SduiScope
 ) {
     Button(
-        onClick = { model.action?.let { onAction(it) } },
+        onClick = { model.action?.let(scope::dispatch) },
         modifier = modifier,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.primary,
@@ -55,11 +52,11 @@ fun SduiButtonComponent(
 @Composable
 fun SduiTextButtonComponent(
     model: SduiTextButton,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
+    modifier: Modifier,
+    scope: SduiScope
 ) {
     TextButton(
-        onClick = { model.action?.let { onAction(it) } },
+        onClick = { model.action?.let(scope::dispatch) },
         modifier = modifier
     ) {
         Text(text = model.text, color = MaterialTheme.colorScheme.secondary)
@@ -69,8 +66,8 @@ fun SduiTextButtonComponent(
 @Composable
 fun SduiIconButtonComponent(
     model: SduiIconButton,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
+    modifier: Modifier,
+    scope: SduiScope
 ) {
     val imageVector = when (model.iconName) {
         "search" -> Icons.Default.Search
@@ -84,7 +81,7 @@ fun SduiIconButtonComponent(
                 "SduiIconButton",
                 "Clicked: ${model.iconName}, action: ${model.action}"
             )
-            model.action?.let { onAction(it) }
+            model.action?.let(scope::dispatch)
         },
         modifier = modifier
     ) {
@@ -99,8 +96,8 @@ fun SduiIconButtonComponent(
 @Composable
 fun SduiSectionHeaderComponent(
     model: SduiSectionHeader,
-    modifier: Modifier = Modifier,
-    onAction: (SduiAction) -> Unit
+    modifier: Modifier,
+    scope: SduiScope
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -116,11 +113,11 @@ fun SduiSectionHeaderComponent(
                 color = MaterialTheme.colorScheme.onBackground
             )
         } else {
-            UiComponentRenderer(component = model.title, onAction = onAction)
+            scope.Render(model.title)
         }
 
         model.actionButton?.let { button ->
-            UiComponentRenderer(component = button, onAction = onAction)
+            scope.Render(button)
         }
     }
 }
@@ -128,7 +125,8 @@ fun SduiSectionHeaderComponent(
 @Composable
 fun SduiSectionHeaderDetailComponent(
     model: SduiSectionHeaderDetail,
-    modifier: Modifier = Modifier,
+    modifier: Modifier,
+    scope: SduiScope
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -143,7 +141,7 @@ fun SduiSectionHeaderDetailComponent(
                 color = MaterialTheme.colorScheme.onBackground
             )
         } else {
-            UiComponentRenderer(model.title)
+            scope.Render(model.title)
         }
     }
 }
