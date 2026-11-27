@@ -68,9 +68,7 @@ fun ErrorDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(model.message)
-                model.retryAfterSeconds?.let {
-                    Text(pluralStringResource(R.plurals.ds_retry_after, it, it))
-                }
+                model.retryAfterSeconds?.let { Text(retryAfterText(it)) }
                 model.technicalDetail?.let {
                     Text(it, style = MaterialTheme.typography.labelSmall)
                 }
@@ -86,3 +84,13 @@ fun ErrorDialog(
         dismissButton = if (model.retryable) secondaryButton else null
     )
 }
+
+/** Waits of a minute or more are given in whole minutes, rounded up so nobody retries too early. */
+@Composable
+private fun retryAfterText(seconds: Int): String =
+    if (seconds < 60) {
+        pluralStringResource(R.plurals.ds_retry_after_seconds, seconds, seconds)
+    } else {
+        val minutes = (seconds + 59) / 60
+        pluralStringResource(R.plurals.ds_retry_after_minutes, minutes, minutes)
+    }

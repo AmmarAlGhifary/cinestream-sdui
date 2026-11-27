@@ -1,5 +1,8 @@
 package com.ammar.sdui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -84,6 +87,32 @@ class ErrorDialogTextTest {
 
         compose.onNodeWithText("We couldn't load movies right now. Please try again in a moment.").assertIsDisplayed()
         compose.onNodeWithText("Try again in 30 seconds.").assertIsDisplayed()
+    }
+
+    @Test
+    fun `waits under a minute are in seconds and longer ones in minutes rounded up`() {
+        var wait by mutableStateOf(1)
+        compose.setContent {
+            ErrorDialog(
+                model = errorDialogModel(AppError.Http(503, serverCode = "MAINTENANCE", retryAfterSeconds = wait)),
+                onRetry = {},
+                onDismiss = {}
+            )
+        }
+        val expected = listOf(
+            1 to "1 second",
+            59 to "59 seconds",
+            60 to "1 minute",
+            61 to "2 minutes",
+            120 to "2 minutes",
+            300 to "5 minutes",
+            86_400 to "1440 minutes"
+        )
+
+        for ((seconds, text) in expected) {
+            compose.runOnIdle { wait = seconds }
+            compose.onNodeWithText("Try again in $text.").assertIsDisplayed()
+        }
     }
 
     @Test
