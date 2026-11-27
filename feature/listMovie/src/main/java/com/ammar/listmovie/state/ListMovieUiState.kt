@@ -1,6 +1,6 @@
 package com.ammar.listmovie.state
 
-import com.ammar.sdui.domain.model.SduiScreen
+import io.github.ammaralghifary.blueprint.model.SduiScreen
 
 sealed interface ListMovieUiState {
     data object Loading: ListMovieUiState

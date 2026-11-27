@@ -19,8 +19,6 @@ android {
         consumerProguardFiles("consumer-rules.pro")
 
         buildConfigField("String", "BASE_URL", "\"${project.findProperty("BASE_URL")}\"")
-        buildConfigField("String", "BASE_URL_TMDB", "\"${project.findProperty("BASE_URL_TMDB")}\"")
-        buildConfigField("String", "API_KEY_TMDB", "\"${project.findProperty("API_KEY_TMDB")}\"")
     }
 
     buildFeatures {
@@ -35,9 +33,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
     }
 }
 
@@ -58,4 +53,10 @@ dependencies {
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.gson)
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+    }
 }

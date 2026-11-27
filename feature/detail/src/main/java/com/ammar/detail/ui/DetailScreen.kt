@@ -18,7 +18,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ammar.detail.state.DetailUiState
 import com.ammar.detail.viewmodel.DetailViewModel
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import com.ammar.sdui.presentation.SduiScreenRenderer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +44,9 @@ fun DetailScreen(
             }
 
             is DetailUiState.Success -> {
-                UiComponentRenderer(
+                SduiScreenRenderer(
                     modifier = modifier.fillMaxSize(),
-                    component = state.screen,
+                    screen = state.screen,
                     onAction = { action ->
                         viewModel.handleAction(
                             action = action,

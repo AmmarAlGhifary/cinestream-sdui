@@ -18,8 +18,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ammar.listmovie.state.ListMovieUiState
 import com.ammar.listmovie.viewmodel.ListMovieViewModel
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.model.NavigateAction
+import com.ammar.sdui.presentation.SduiScreenRenderer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,12 +51,12 @@ fun ListMovieScreen(
                 }
             }
             is ListMovieUiState.Success -> {
-                UiComponentRenderer(
-                    component = state.screen,
+                SduiScreenRenderer(
+                    screen = state.screen,
                     modifier = Modifier.fillMaxSize(),
                     onAction = { action ->
-                        if (action is NavigationAction && action.destination == "movie_detail_screen") {
-                            val movieId = action.params?.get("movie_id")
+                        if (action is NavigateAction && action.destination == "movie_detail_screen") {
+                            val movieId = action.params.get("movie_id")
                             if (movieId != null) {
                                 onNavigateToDetail(movieId)
                             }

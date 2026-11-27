@@ -1,8 +1,8 @@
 # Project Structure
 
-This project is a multi-module Android application engineered around a Server-Driven UI (SDUI) architecture, along with a counterpart classic implementation for architectural comparison.
+This project is a multi-module Android application engineered around a Server-Driven UI (SDUI) architecture.
 
-The repository is modularized into `app`, `core`, `feature`, `app-classic`, and `feature-classic` components.
+The repository is modularized into `app`, `core`, and `feature` components.
 
 ---
 
@@ -18,13 +18,15 @@ The main application entry point and dependency injection root for the SDUI engi
 #### 2. `core`
 Reusable foundational libraries and shared data layer logic.
 
-* **`core:sdui`** (Server-Driven UI Engine)
-  The core rendering engine responsible for parsing server responses and rendering Jetpack Compose UI dynamically.
-  - `data/repository`: Fetches SDUI JSON blueprints from the network.
-  - `domain/model`: Defines polymorphic SDUI component data models (`SduiScreen`, `SduiComponent`, `SduiAction`).
-  - `domain/usecase`: SDUI business logic and tree validation.
-  - `presentation/components`: Declarative Jetpack Compose component implementations.
-  - `presentation/registry`: Component registry resolving blueprint types to Compose renderers.
+* **`core:sdui`** (Server-Driven UI Engine, built on [Blueprint](https://github.com/AmmarAlGhifary/blueprint))
+  Decodes server responses and renders them as Jetpack Compose. Decoding and the render loop come from
+  Blueprint (`io.github.ammaralghifary:blueprint-core` 0.4.0); this module supplies CineStream's vocabulary.
+  - `data/repository`: Fetches SDUI JSON and decodes it with `Blueprint.decodeScreen`. Folds `toolbar` + `body` into a `screen_scaffold` node.
+  - `domain/model`: CineStream component and action models, implementing Blueprint's `SduiComponent` / `SduiAction` interfaces.
+  - `domain/usecase`: SDUI business logic.
+  - `presentation/components`: Compose renderers, each receiving Blueprint's `SduiScope` to render children and dispatch actions.
+  - `presentation/registry`: `CineStreamRegistry` binds every JSON `type` to a model and renderer; `CineStreamBlueprint` is the shared instance, provided by Hilt and passed to the renderer through `LocalSduiBlueprint`.
+  - Tolerant decoding: an unknown or malformed node degrades alone (placeholder in debug, nothing in release) and is logged under the `Blueprint` tag.
 
 * **`core:network`**
   Handles external API communications and networking infrastructure.
@@ -57,22 +59,6 @@ Feature modules implementing specific screens driven by the SDUI engine under an
   - `state`: UI states for the search flow.
   - `ui`: Real-time search query bar and vertical results.
   - `viewmodel`: Query processing and debounce handling.
-
----
-
-### 🏛️ Classic Architecture Modules (Comparative Baseline)
-
-Used for empirical comparison in thesis research against traditional native Android development patterns.
-
-#### 1. `app-classic`
-- **Package**: `com.ammar.cinestream.classic`
-- **Responsibilities**: Host application for the hardcoded benchmark application.
-
-#### 2. `feature-classic`
-Feature modules directly consuming REST endpoints (TMDB) with hardcoded UI structures.
-* **`feature-classic:home`**: Hardcoded home screen with static carousel sections.
-* **`feature-classic:detail`**: Hardcoded movie detail screen.
-* **`feature-classic:listMovie`**: Hardcoded category movie list screen.
 
 ---
 

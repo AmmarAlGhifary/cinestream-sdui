@@ -1,6 +1,6 @@
 package com.ammar.home.state
 
-import com.ammar.sdui.domain.model.SduiScreen
+import io.github.ammaralghifary.blueprint.model.SduiScreen
 
 sealed interface HomeUiState {
     data object Loading : HomeUiState

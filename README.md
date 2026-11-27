@@ -1,9 +1,9 @@
 # CineStream Android Client
 
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-green?logo=android)](https://developer.android.com/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple?logo=kotlin)](https://kotlinlang.org/)
-[![Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.09.00-blue?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
-[![Dagger Hilt](https://img.shields.io/badge/Dagger%20Hilt-2.51.1-orange)](https://dagger.dev/hilt/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-purple?logo=kotlin)](https://kotlinlang.org/)
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-1.11.2-blue?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
+[![Dagger Hilt](https://img.shields.io/badge/Dagger%20Hilt-2.58-orange)](https://dagger.dev/hilt/)
 [![Backend](https://img.shields.io/badge/Backend-BFF%20Vercel-black?logo=vercel)](https://sdui-backend.vercel.app/)
 
 The native Android frontend for **CineStream**, engineered to explore **Server-Driven UI (SDUI)** architectures.
@@ -59,15 +59,6 @@ flowchart LR
 | **`:feature:listMovie`** | [`/feature/listMovie`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature/listMovie) | Categorized vertical movie listing (Trending, Upcoming, Similar) |
 | **`:feature:search`** | [`/feature/search`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature/search) | Real-time movie search exploration screen |
 
-### 🏛️ Classic Benchmark Modules (Traditional Implementation)
-For thesis comparison against traditional native Android development:
-| Module | GitHub Path | Purpose |
-| :--- | :--- | :--- |
-| **`:app-classic`** | [`/app-classic`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/app-classic) | Hardcoded native Android client entrypoint |
-| **`:feature-classic:home`** | [`/feature-classic/home`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature-classic/home) | Hardcoded home screen directly consuming TMDB data |
-| **`:feature-classic:detail`** | [`/feature-classic/detail`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature-classic/detail) | Hardcoded movie detail screen |
-| **`:feature-classic:listMovie`** | [`/feature-classic/listMovie`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature-classic/listMovie) | Hardcoded category movie list |
-
 ---
 
 ## 🌐 SDUI Contract & Backend Endpoints
@@ -90,7 +81,6 @@ The Android client dynamically consumes endpoints defined in [cinestream-sdui-ba
 | :--- | :--- | :--- |
 | **`cinestream-sdui`** | `development` | Main integration branch for SDUI Android client features |
 | **`cinestream-sdui`** | `main` | Production-ready stable release branch |
-| **`cinestream-sdui`** | `app-classic/dev` | Feature branch for classic Android comparison architecture |
 | **`cinestream-sdui-backend`** | `main` | Production deployment branch automatically hosted on Vercel |
 
 ---
@@ -121,9 +111,6 @@ chmod +x gradlew
 
 # Build and install SDUI application on running AVD/device
 ./gradlew :app:installDebug
-
-# Build and install Classic comparison application
-./gradlew :app-classic:installDebug
 
 # Run unit tests across all modules
 ./gradlew testDebugUnitTest
