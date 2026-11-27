@@ -27,7 +27,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = hiltViewModel(),
     onNavigateToDetail: (String) -> Unit,
     onNavigateToList: (String) -> Unit,
-    onNavigateToSearch: () -> Unit
+    onNavigateToSearch: () -> Unit,
+    onSignIn: () -> Unit
 ) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,7 +49,11 @@ fun HomeScreen(
                     ErrorDialog(
                         model = errorDialogModel(state.error),
                         onRetry = viewModel::reload,
-                        onDismiss = viewModel::dismissError
+                        onDismiss = viewModel::dismissError,
+                        onSignIn = {
+                            viewModel.dismissError()
+                            onSignIn()
+                        }
                     )
                 }
             }
@@ -78,7 +83,11 @@ fun HomeScreen(
                     ErrorDialog(
                         model = errorDialogModel(error),
                         onRetry = viewModel::reload,
-                        onDismiss = viewModel::dismissError
+                        onDismiss = viewModel::dismissError,
+                        onSignIn = {
+                            viewModel.dismissError()
+                            onSignIn()
+                        }
                     )
                 }
             }

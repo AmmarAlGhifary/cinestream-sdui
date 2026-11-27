@@ -3,6 +3,7 @@ package com.ammar.search.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ammar.network.error.toAppError
+import com.ammar.network.session.SessionRepository
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import com.ammar.search.state.SearchUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val getSduiScreenUseCase: GetSduiScreenUseCase
+    private val getSduiScreenUseCase: GetSduiScreenUseCase,
+    sessionRepository: SessionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SearchUiState>(SearchUiState.Idle)
@@ -27,6 +29,10 @@ class SearchViewModel @Inject constructor(
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
     private var searchJob: Job? = null
+
+    init {
+        viewModelScope.launch { sessionRepository.signIns.collect { reload() } }
+    }
 
     fun onQueryChanged(query: String) {
         val capped = query.capped()

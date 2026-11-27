@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ammar.home.state.HomeUiState
 import com.ammar.network.error.toAppError
+import com.ammar.network.session.SessionRepository
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val getSduiScreenUseCase: GetSduiScreenUseCase
+    private val getSduiScreenUseCase: GetSduiScreenUseCase,
+    sessionRepository: SessionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
@@ -28,6 +30,7 @@ class HomeViewModel @Inject constructor(
     private var loadJob: Job? = null
 
     init {
+        viewModelScope.launch { sessionRepository.signIns.collect { reload() } }
         load()
     }
 

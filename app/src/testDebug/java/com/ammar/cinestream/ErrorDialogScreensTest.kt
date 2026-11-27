@@ -19,14 +19,13 @@ import com.ammar.home.viewmodel.HomeViewModel
 import com.ammar.listmovie.ui.ListMovieScreen
 import com.ammar.listmovie.viewmodel.ListMovieViewModel
 import com.ammar.network.error.AppError
-import com.ammar.sdui.domain.repository.SduiRepository
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
+import com.ammar.sdui.domain.usecase.SendApiActionUseCase
 import com.ammar.sdui.presentation.LocalSduiBlueprint
 import com.ammar.sdui.presentation.registry.CineStreamBlueprint
 import com.ammar.search.ui.SearchScreen
 import com.ammar.search.viewmodel.SearchViewModel
 import io.github.ammaralghifary.blueprint.model.SduiScreen
-import kotlinx.coroutines.flow.flow
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -44,20 +43,6 @@ class ErrorDialogScreensTest {
     @get:Rule
     val compose = createComposeRule()
 
-    /** Answers every request with [next] and records the parameters. */
-    private class FakeRepository(var next: Result<SduiScreen>) : SduiRepository {
-        val requests = mutableListOf<Map<String, String>>()
-
-        override fun getScreen(screenId: String, params: Map<String, String>) = flow {
-            requests += params
-            emit(next)
-        }
-    }
-
-    private fun screen(body: String) = Result.success(
-        CineStreamBlueprint.instance.decodeScreen("""{"screen_id":"x","body":$body}""")
-    )
-
     private val content = screen(
         """{"type":"column","children":[{"type":"text","text_content":"loaded content"}]}"""
     )
@@ -68,6 +53,8 @@ class ErrorDialogScreensTest {
 
     private var backs = 0
 
+    private val sessions = FakeSessions()
+
     private fun setScreen(screen: @Composable () -> Unit) {
         compose.setContent {
             CompositionLocalProvider(LocalSduiBlueprint provides CineStreamBlueprint.instance, content = screen)
@@ -75,9 +62,15 @@ class ErrorDialogScreensTest {
     }
 
     private fun home(repository: FakeRepository): HomeViewModel {
-        val viewModel = HomeViewModel(GetSduiScreenUseCase(repository))
+        val viewModel = HomeViewModel(GetSduiScreenUseCase(repository), sessions)
         setScreen {
-            HomeScreen(viewModel = viewModel, onNavigateToDetail = {}, onNavigateToList = {}, onNavigateToSearch = {})
+            HomeScreen(
+                viewModel = viewModel,
+                onNavigateToDetail = {},
+                onNavigateToList = {},
+                onNavigateToSearch = {},
+                onSignIn = {}
+            )
         }
         return viewModel
     }
@@ -85,12 +78,15 @@ class ErrorDialogScreensTest {
     private fun detail(repository: FakeRepository, movieId: String? = "42"): DetailViewModel {
         val viewModel = DetailViewModel(
             GetSduiScreenUseCase(repository),
+            SendApiActionUseCase(FakeActions()),
+            sessions,
             SavedStateHandle(buildMap { movieId?.let { put("movie_id", it) } })
         )
         setScreen {
             DetailScreen(
                 viewModel = viewModel,
                 onNavigateBack = { backs++ },
+                onSignIn = {},
                 onNavigateToDetail = {},
                 onNavigateToList = { _, _ -> }
             )
@@ -101,17 +97,23 @@ class ErrorDialogScreensTest {
     private fun list(repository: FakeRepository): ListMovieViewModel {
         val viewModel = ListMovieViewModel(
             GetSduiScreenUseCase(repository),
-            SavedStateHandle(mapOf("list_type" to "trending"))
+            SavedStateHandle(mapOf("list_type" to "trending")),
+            sessions
         )
         setScreen {
-            ListMovieScreen(viewModel = viewModel, onNavigateBack = { backs++ }, onNavigateToDetail = {})
+            ListMovieScreen(
+                viewModel = viewModel,
+                onNavigateBack = { backs++ },
+                onSignIn = {},
+                onNavigateToDetail = {}
+            )
         }
         return viewModel
     }
 
     private fun search(repository: FakeRepository): SearchViewModel {
-        val viewModel = SearchViewModel(GetSduiScreenUseCase(repository))
-        setScreen { SearchScreen(viewModel = viewModel, onNavigateToDetail = {}) }
+        val viewModel = SearchViewModel(GetSduiScreenUseCase(repository), sessions)
+        setScreen { SearchScreen(viewModel = viewModel, onNavigateToDetail = {}, onSignIn = {}) }
         return viewModel
     }
 
@@ -327,6 +329,18 @@ class ErrorDialogScreensTest {
         assertEquals(1, repository.requests.size)
         text("Close").assertDoesNotExist()
         text("Retry").assertDoesNotExist()
+    }
+
+    @Test
+    fun `every screen loads again after a sign-in`() {
+        val repository = FakeRepository(content)
+        home(repository)
+
+        compose.runOnIdle { sessions.signIns.tryEmit(Unit) }
+        compose.waitForIdle()
+
+        assertEquals(2, repository.requests.size)
+        text("loaded content").assertIsDisplayed()
     }
 
     @Test

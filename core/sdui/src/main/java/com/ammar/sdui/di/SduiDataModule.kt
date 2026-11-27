@@ -1,6 +1,8 @@
 package com.ammar.sdui.di
 
+import com.ammar.sdui.data.repository.ActionRepositoryImpl
 import com.ammar.sdui.data.repository.SduiRepositoryImpl
+import com.ammar.sdui.domain.repository.ActionRepository
 import com.ammar.sdui.domain.repository.SduiRepository
 import com.ammar.sdui.presentation.registry.CineStreamBlueprint
 import dagger.Binds
@@ -20,6 +22,12 @@ abstract class SduiDataModule {
     abstract fun bindSduiRepository(
         impl: SduiRepositoryImpl
     ): SduiRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindActionRepository(
+        impl: ActionRepositoryImpl
+    ): ActionRepository
 
     companion object {
         @Provides
