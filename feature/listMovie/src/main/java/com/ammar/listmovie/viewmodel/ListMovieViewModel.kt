@@ -61,7 +61,7 @@ class ListMovieViewModel @Inject constructor(
     fun handleAction(action: SduiAction) {
         when (action) {
             is NavigateAction -> {
-                println("Navigation Triggered: Destination = ${action.destination}, Params = ${action.params}")
+                android.util.Log.d("SduiAction", "Unhandled action: ${action.javaClass.simpleName}")
             }
             else -> {}
         }

@@ -79,11 +79,8 @@ class DetailViewModel @Inject constructor(
                     }
                 }
             }
-            is ApiAction -> {
-                android.util.Log.d("SduiAction", "Executing API Call: ${action.method} ${action.endpoint}")
-            }
-            is ShareAction -> {
-                android.util.Log.d("SduiAction", "Sharing content: ${action.content}")
+            is ApiAction, is ShareAction -> {
+                android.util.Log.d("SduiAction", "Unhandled action: ${action.javaClass.simpleName}")
             }
         }
     }
