@@ -1,10 +1,12 @@
 package com.ammar.network
 
-import com.ammar.network.session.Account
+import com.ammar.network.session.KeySource
 import com.ammar.network.session.PendingSignIn
 import com.ammar.network.session.SessionState
 import com.ammar.network.session.SessionStore
 import com.ammar.network.session.StoredSession
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -15,20 +17,25 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import java.util.Base64
+import java.util.concurrent.Executors
+import javax.crypto.SecretKey
 
 class SessionStoreTest {
 
     private val prefs = MemoryStore()
     private val key = newKey()
 
-    private fun open(now: Long = 0) =
-        SessionStore(storage(prefs, key), Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC))
+    private fun open(now: Long = 0, origin: String = ORIGIN) = sessionStore(
+        storage(prefs, key), Clock.fixed(Instant.ofEpochMilli(now), ZoneOffset.UTC), origin
+    )
 
-    private val signedIn = SessionState.SignedIn(Account("7", "tester"))
+    private fun SessionStore.save() = save("test-session", TESTER)
+
+    private val signedIn = SessionState.SignedIn(TESTER)
 
     @Test
     fun `a saved session survives a restart`() {
-        open().save(StoredSession("test-session", "7", "tester"))
+        open().save()
 
         val reopened = open()
 
@@ -39,8 +46,8 @@ class SessionStoreTest {
     @Test
     fun `nothing is written in the clear`() {
         val store = open()
-        store.save(StoredSession("test-session", "7", "tester"))
-        store.savePending(PendingSignIn("test-token", "test-secret", 5))
+        store.save()
+        store.savePending("test-token", "test-secret", 5)
 
         assertEquals(setOf("session", "pending_sign_in"), prefs.values.keys)
         for (value in prefs.values.values) {
@@ -55,9 +62,9 @@ class SessionStoreTest {
     @Test
     fun `the same value is encrypted differently every time`() {
         val store = open()
-        store.save(StoredSession("test-session", "7", "tester"))
+        store.save()
         val first = prefs.values.getValue("session")
-        store.save(StoredSession("test-session", "7", "tester"))
+        store.save()
 
         assertNotEquals(first, prefs.values.getValue("session"))
     }
@@ -65,12 +72,12 @@ class SessionStoreTest {
     @Test
     fun `a value that was tampered with or written with another key means signed out`() {
         fun saved(): String {
-            open().save(StoredSession("test-session", "7", "tester"))
+            open().save()
             return prefs.values.getValue("session")
         }
 
         saved()
-        assertEquals(SessionState.SignedOut, SessionStore(storage(prefs, newKey()), Clock.systemUTC()).state.value)
+        assertEquals(SessionState.SignedOut, sessionStore(storage(prefs, newKey())).state.value)
 
         val bytes = Base64.getDecoder().decode(saved())
         bytes[bytes.lastIndex] = (bytes.last() + 1).toByte()
@@ -85,9 +92,57 @@ class SessionStoreTest {
     }
 
     @Test
+    fun `a session and a sign-in for another backend are discarded`() {
+        for (other in listOf("http://backend.test:80", "https://backend.test:8443", "https://other.test:443")) {
+            open().save()
+            open().savePending("test-token", "test-secret", 5)
+
+            val moved = open(origin = other)
+
+            assertEquals(other, SessionState.SignedOut, moved.state.value)
+            assertNull(moved.sessionId())
+            assertNull(moved.pending())
+            assertEquals(other, emptySet<String>(), prefs.values.keys)
+        }
+    }
+
+    @Test
+    fun `an entry cannot be moved to another name`() {
+        open().save()
+        prefs.values["pending_sign_in"] = prefs.values.getValue("session")
+        val sealed = storage(prefs, key)
+
+        assertNull(sealed.read("pending_sign_in"))
+        assertTrue(sealed.read("session")!!.contains("test-session"))
+    }
+
+    @Test
+    fun `storage and keys are only touched off the calling thread`() = runBlocking {
+        val watched = ThreadRecordingStore(prefs)
+        val keys = FakeKeys(key)
+        val watchedKeys = object : KeySource by keys {
+            override fun get(): SecretKey {
+                assertEquals("session-io", Thread.currentThread().name.substringBefore(" @"))
+                return keys.get()
+            }
+        }
+        open().save()
+        val executor = Executors.newSingleThreadExecutor { Thread(it, "session-io") }
+        try {
+            val store = sessionStore(storage(watched, watchedKeys), io = executor.asCoroutineDispatcher())
+            store.onIo { savePending("test-token", "test-secret", Long.MAX_VALUE) }
+            assertEquals(signedIn, store.state.value)
+
+            assertEquals(setOf("session-io"), watched.threads)
+        } finally {
+            executor.shutdown()
+        }
+    }
+
+    @Test
     fun `clearing removes the stored session`() {
         val store = open()
-        store.save(StoredSession("test-session", "7", "tester"))
+        store.save()
 
         store.clearSessionIfCurrent("another-session")
         assertEquals(signedIn, store.state.value)
@@ -99,14 +154,14 @@ class SessionStoreTest {
 
     @Test
     fun `printing the stored objects does not reveal them`() {
-        assertFalse("test-session" in StoredSession("test-session", "7", "tester").toString())
-        val pending = PendingSignIn("test-token", "test-secret", 5).toString()
+        assertFalse("test-session" in StoredSession("test-session", "7", "tester", ORIGIN).toString())
+        val pending = PendingSignIn("test-token", "test-secret", 5, ORIGIN).toString()
         assertFalse("test-token" in pending || "test-secret" in pending)
     }
 
     @Test
     fun `an expired pending sign-in is removed when the app starts again`() {
-        open().savePending(PendingSignIn("test-token", "test-secret", 1000))
+        open().savePending("test-token", "test-secret", 1000)
 
         assertEquals(setOf("pending_sign_in"), open(now = 999).let { prefs.values.keys.toSet() })
         val later = open(now = 1000)

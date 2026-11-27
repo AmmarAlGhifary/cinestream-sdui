@@ -4,14 +4,15 @@ import com.ammar.network.error.AppError
 import com.ammar.network.session.Account
 import com.ammar.network.session.SessionRepositoryImpl
 import com.ammar.network.session.SessionState
-import com.ammar.network.session.SessionStore
 import com.ammar.network.session.SignInCallback
 import com.ammar.network.session.SignInOutcome
 import com.ammar.network.session.parseExpiry
 import com.ammar.network.source.AuthInterceptor
 import com.ammar.network.source.createAuthApi
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -29,6 +30,7 @@ import org.junit.Test
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class SessionRepositoryTest {
@@ -43,7 +45,7 @@ class SessionRepositoryTest {
         override fun withZone(zone: java.time.ZoneId) = this
     }
 
-    private val store = SessionStore(storage(prefs), clock)
+    private val store = sessionStore(storage(prefs), clock, origin = "backend")
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor(store, server.url("/")))
@@ -265,8 +267,25 @@ class SessionRepositoryTest {
     }
 
     @Test
-    fun `only a secure approve page is accepted`() {
-        for (url in listOf("http://www.themoviedb.org/x", "intent://x#Intent;end", "javascript:alert(1)", "")) {
+    fun `the approve page is passed on with its query`() {
+        val url = "https://www.themoviedb.org/authenticate/test-token?redirect_to=cinestream%3A%2F%2Fauth%2Ftmdb"
+
+        assertEquals(url, start(tokenAnswer(approveUrl = url)).getOrThrow())
+    }
+
+    @Test
+    fun `only TMDB over HTTPS is accepted as the approve page`() {
+        for (url in listOf(
+            "http://www.themoviedb.org/x",
+            "https://themoviedb.org/x",
+            "https://www.themoviedb.org.example.org/x",
+            "https://evil.themoviedb.org/x",
+            "https://www.themoviedb.org@example.org/x",
+            "https://example.org/www.themoviedb.org",
+            "intent://x#Intent;end",
+            "javascript:alert(1)",
+            ""
+        )) {
             assertTrue(url, start(tokenAnswer(approveUrl = url)).exceptionOrNull() is AppError.Parse)
             assertNull(store.pending())
         }
@@ -281,6 +300,24 @@ class SessionRepositoryTest {
 
         assertEquals("SIGN_IN_FAILED", error.serverCode)
         assertNull(store.pending())
+    }
+
+    @Test
+    fun `finishing an old sign-in leaves a newer one in place`() = runBlocking {
+        for (answer in listOf(sessionAnswer, json("{}", 401))) {
+            store.clearSession()
+            start()
+            server.takeRequest()
+            server.enqueue(answer.clone().setHeadersDelay(500, TimeUnit.MILLISECONDS))
+            val completing = async(Dispatchers.IO) { repository.completeSignIn(approved) }
+            // The session call is on its way when another sign-in is stored.
+            assertNotNull(server.takeRequest(2, TimeUnit.SECONDS))
+            store.savePending("newer-token", "newer-secret", Long.MAX_VALUE)
+
+            completing.await()
+
+            assertEquals("newer-token", store.pending()?.requestToken)
+        }
     }
 
     @Test
@@ -392,6 +429,28 @@ class SessionRepositoryTest {
     }
 
     @Test
+    fun `sign-in and sign-out keep storage off the calling thread`() = runBlocking<Unit> {
+        val watched = ThreadRecordingStore()
+        val executor = Executors.newSingleThreadExecutor { Thread(it, "session-io") }
+        try {
+            val store = sessionStore(storage(watched), clock, io = executor.asCoroutineDispatcher())
+            val repository = SessionRepositoryImpl(createAuthApi(client, server.url("/")), store, clock)
+            server.enqueue(tokenAnswer())
+            server.enqueue(sessionAnswer)
+            server.enqueue(MockResponse().setResponseCode(204))
+
+            repository.startSignIn().getOrThrow()
+            repository.completeSignIn(approved).getOrThrow()
+            repository.signOut().getOrThrow()
+            repository.clear()
+
+            assertEquals(setOf("session-io"), watched.threads)
+        } finally {
+            executor.shutdown()
+        }
+    }
+
+    @Test
     fun `sign out forgets the session even when the server call fails`() = runBlocking {
         signIn()
         server.enqueue(json("{}", 500))
@@ -402,7 +461,7 @@ class SessionRepositoryTest {
     }
 
     @Test
-    fun `signing out while signed out calls nothing, and clear forgets everything`() = runBlocking {
+    fun `signing out while signed out calls nothing, and clear forgets everything`() = runBlocking<Unit> {
         assertTrue(repository.signOut().isSuccess)
         assertEquals(0, server.requestCount)
 

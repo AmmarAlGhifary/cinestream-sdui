@@ -10,11 +10,13 @@ import com.ammar.network.session.SessionRepositoryImpl
 import com.ammar.network.session.SessionStore
 import com.ammar.network.session.SharedPreferencesStore
 import com.ammar.network.source.createAuthApi
+import com.ammar.network.source.origin
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.Dispatchers
 import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
 import java.time.Clock
@@ -31,9 +33,17 @@ object SessionModule {
     @Provides
     @Singleton
     fun provideSessionStore(@ApplicationContext context: Context): SessionStore {
-        val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        // Injection happens on the main thread, so nothing here may touch disk or Keystore.
+        val preferences = SharedPreferencesStore {
+            context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
+        }
         val cipher = AesGcmCipher(AndroidKeystoreKey(KEY_ALIAS))
-        return SessionStore(EncryptedStorage(SharedPreferencesStore(preferences), cipher), Clock.systemUTC())
+        return SessionStore(
+            storage = EncryptedStorage(preferences, cipher),
+            origin = BuildConfig.BASE_URL.toHttpUrl().origin,
+            clock = Clock.systemUTC(),
+            io = Dispatchers.IO
+        )
     }
 
     @Provides

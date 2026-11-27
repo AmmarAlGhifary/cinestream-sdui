@@ -1,7 +1,9 @@
 package com.ammar.cinestream
 
 import android.app.Application
+import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
@@ -13,6 +15,7 @@ import com.ammar.cinestream.auth.SignInViewModel
 import com.ammar.network.error.AppError
 import com.ammar.network.session.SignInOutcome
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -137,6 +140,17 @@ class SignInTest {
         run(viewModel::signIn)
 
         compose.onNodeWithText("Something went wrong").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the main activity shares no task affinity`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        val activity = context.packageManager.getActivityInfo(
+            ComponentName(context, "com.ammar.cinestream.MainActivity"), 0
+        )
+
+        assertTrue(activity.taskAffinity.isNullOrEmpty())
+        assertEquals(ActivityInfo.LAUNCH_SINGLE_TASK, activity.launchMode)
     }
 
     @Test

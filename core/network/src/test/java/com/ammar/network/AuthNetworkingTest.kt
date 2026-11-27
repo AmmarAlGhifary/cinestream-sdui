@@ -132,7 +132,7 @@ class AuthNetworkingTest {
             .addInterceptor { chain ->
                 // The user signs in again while this request is still on its way.
                 chain.proceed(chain.request()).also {
-                    store.save(com.ammar.network.session.StoredSession("newer-session", "7", "tester"))
+                    store.save("newer-session", TESTER)
                 }
             }
             .build()
@@ -233,6 +233,39 @@ class AuthNetworkingTest {
             assertEquals(status, error.status)
         }
         assertEquals(0, elsewhere.requestCount)
+    }
+
+    @Test
+    fun `an action stays under api and away from sign-in`() = runBlocking {
+        for (endpoint in listOf(
+            "/", "/api", "/api/", "/other/favorite", "/apix/favorite", "/API/favorite",
+            "/api/auth/session", "/api/auth", "api//auth/session", "/api///auth/session",
+            "/api/Auth/session", "/api/%61uth/session", "/api/favorite/../auth/session",
+            "/api/%2e%2e/other", "/api/auth%2Fsession", "/api/x%2F..%2Fauth", "/api/x%5Cauth"
+        )) {
+            val error = actions.send("DELETE", endpoint, null).exceptionOrNull()
+            assertTrue(endpoint, error is AppError.InvalidRequest)
+        }
+        assertEquals(0, backend.requestCount)
+
+        for (endpoint in listOf("/api/favorite", "api/favorite", "/api/lists/1?page=2")) {
+            backend.enqueue(MockResponse())
+            assertTrue(endpoint, actions.send("POST", endpoint, null).isSuccess)
+        }
+    }
+
+    @Test
+    fun `empty path segments do not hide a sign-in endpoint`() {
+        val url = backend.url("/").newBuilder().encodedPath("/api//auth/session").build()
+        backend.enqueue(MockResponse().setBody("""{"session_id":"test-session"}"""))
+        val request = Request.Builder().url(url)
+            .post("""{"sign_in_secret":"test-secret"}""".toRequestBody("application/json".toMediaType()))
+            .build()
+
+        client.newCall(request).execute().close()
+
+        assertNull(backend.takeRequest().getHeader("Authorization"))
+        assertFalse(log.any { "test-session" in it || "test-secret" in it })
     }
 
     @Test

@@ -24,8 +24,8 @@ internal class ActionDataSourceImpl(
 
     override suspend fun send(method: String, endpoint: String, body: JsonObject?): Result<String> = apiResult {
         val verb = method.uppercase()
-        // The endpoint comes from the server. It may only name a path on our own backend.
-        val url = baseUrl.resolve(endpoint)?.takeIf { it.isSameOrigin(baseUrl) }
+        // The endpoint comes from the server. It may only name an API path on our own backend.
+        val url = baseUrl.resolve(endpoint)?.takeIf { it.isSameOrigin(baseUrl) && it.isActionEndpoint() }
         if (url == null || verb !in METHODS) {
             Result.failure(AppError.InvalidRequest())
         } else {

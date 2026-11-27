@@ -8,9 +8,10 @@ import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
+/** The [name] a value is stored under is bound to it, so one entry cannot be passed off as another. */
 internal interface SecretCipher {
-    fun encrypt(plain: ByteArray): ByteArray
-    fun decrypt(sealed: ByteArray): ByteArray
+    fun encrypt(name: String, plain: ByteArray): ByteArray
+    fun decrypt(name: String, sealed: ByteArray): ByteArray
 
     /** Throws the key away, so the next call starts with a new one. */
     fun reset()
@@ -23,21 +24,29 @@ internal interface KeySource {
     fun delete()
 }
 
-/** AES-GCM. The output is the 12-byte IV the provider picked, followed by ciphertext and tag. */
+/**
+ * AES-GCM with the entry name as additional authenticated data. The output is the 12-byte IV the
+ * provider picked, followed by ciphertext and tag.
+ *
+ * Values written before the name was bound no longer decrypt; they are dropped, which only signs
+ * out builds made before sign-in was released.
+ */
 internal class AesGcmCipher(private val keys: KeySource) : SecretCipher {
 
-    override fun encrypt(plain: ByteArray): ByteArray {
+    override fun encrypt(name: String, plain: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         // No IV is passed in: AndroidKeyStore refuses caller-chosen IVs, which prevents reuse.
         cipher.init(Cipher.ENCRYPT_MODE, keys.get())
         val iv = cipher.iv
         check(iv.size == IV_BYTES)
+        cipher.updateAAD(name.encodeToByteArray())
         return iv + cipher.doFinal(plain)
     }
 
-    override fun decrypt(sealed: ByteArray): ByteArray {
+    override fun decrypt(name: String, sealed: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         cipher.init(Cipher.DECRYPT_MODE, keys.get(), GCMParameterSpec(TAG_BITS, sealed, 0, IV_BYTES))
+        cipher.updateAAD(name.encodeToByteArray())
         return cipher.doFinal(sealed, IV_BYTES, sealed.size - IV_BYTES)
     }
 

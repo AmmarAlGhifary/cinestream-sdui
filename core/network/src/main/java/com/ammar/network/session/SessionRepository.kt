@@ -33,5 +33,5 @@ interface SessionRepository {
     suspend fun signOut(): Result<Unit>
 
     /** Forgets the stored session and any sign-in in progress, without calling the server. */
-    fun clear()
+    suspend fun clear()
 }

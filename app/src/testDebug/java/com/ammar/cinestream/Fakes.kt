@@ -55,7 +55,7 @@ class FakeSessions : SessionRepository {
 
     override suspend fun signOut() = Result.success(Unit)
 
-    override fun clear() = Unit
+    override suspend fun clear() = Unit
 }
 
 fun screen(body: String, toolbar: String? = null): Result<SduiScreen> = Result.success(

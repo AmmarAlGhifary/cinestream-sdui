@@ -13,7 +13,10 @@ internal interface KeyValueStore {
     fun clear()
 }
 
-internal class SharedPreferencesStore(private val preferences: SharedPreferences) : KeyValueStore {
+/** The preferences are opened on first use, which reads from disk. */
+internal class SharedPreferencesStore(open: () -> SharedPreferences) : KeyValueStore {
+    private val preferences by lazy(open)
+
     override fun get(name: String): String? = preferences.getString(name, null)
 
     override fun put(name: String, value: String) {
@@ -43,9 +46,9 @@ internal class EncryptedStorage(
     fun read(name: String): String? {
         val stored = store.get(name) ?: return null
         return try {
-            cipher.decrypt(Base64.getDecoder().decode(stored)).decodeToString()
+            cipher.decrypt(name, Base64.getDecoder().decode(stored)).decodeToString()
         } catch (e: AEADBadTagException) {
-            // The key works; this value was written with another one, or was changed.
+            // The key works; this value was written with another one, under another name, or changed.
             store.remove(name)
             null
         } catch (e: Exception) {
@@ -62,12 +65,12 @@ internal class EncryptedStorage(
     fun write(name: String, value: String): Boolean {
         var wasReset = false
         val sealed = try {
-            seal(value)
+            seal(name, value)
         } catch (e: Exception) {
             if (!e.isKeyFailure()) throw e
             reset()
             wasReset = true
-            seal(value)
+            seal(name, value)
         }
         store.put(name, sealed)
         return wasReset
@@ -75,8 +78,8 @@ internal class EncryptedStorage(
 
     fun remove(name: String) = store.remove(name)
 
-    private fun seal(value: String): String =
-        Base64.getEncoder().encodeToString(cipher.encrypt(value.encodeToByteArray()))
+    private fun seal(name: String, value: String): String =
+        Base64.getEncoder().encodeToString(cipher.encrypt(name, value.encodeToByteArray()))
 
     private fun reset() {
         // A key too broken to delete is replaced anyway the next time one is generated.
