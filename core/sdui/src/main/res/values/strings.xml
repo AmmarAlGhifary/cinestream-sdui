@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Failures without an HTTP status -->
+    <string name="error_no_connection_title">No internet connection</string>
+    <string name="error_no_connection_message">Check your connection and try again.</string>
+    <string name="error_timeout_title">Connection timed out</string>
+    <string name="error_timeout_message">This is taking too long. Check your connection and try again.</string>
+    <string name="error_secure_title">Secure connection failed</string>
+    <string name="error_secure_message">We couldn\'t connect securely. Check your network and your device\'s date and time, then try again.</string>
+    <string name="error_parse_title">Can\'t show this page</string>
+    <string name="error_parse_message">We received something we couldn\'t read. Please try again, or update the app.</string>
+    <string name="error_invalid_request_title">Can\'t open this page</string>
+    <string name="error_invalid_request_message">Some details needed to open this page are missing.</string>
+    <string name="error_unknown_title">Something went wrong</string>
+    <string name="error_unknown_message">An unexpected problem happened. Please try again.</string>
+
+    <!-- Fallbacks by HTTP status -->
+    <string name="error_http_400_title">Request not accepted</string>
+    <string name="error_http_400_message">We couldn\'t process this request.</string>
+    <string name="error_http_denied_title">Access denied</string>
+    <string name="error_http_denied_message">You don\'t have permission to view this content.</string>
+    <string name="error_http_404_title">Not found</string>
+    <string name="error_http_404_message">We couldn\'t find what you were looking for. It may have been moved or removed.</string>
+    <string name="error_http_408_title">Request timed out</string>
+    <string name="error_http_408_message">The request took too long. Please try again.</string>
+    <string name="error_http_429_title">Too many requests</string>
+    <string name="error_http_429_message">You\'re going a bit fast. Wait a moment, then try again.</string>
+    <string name="error_http_4xx_title">Request failed</string>
+    <string name="error_http_4xx_message">We couldn\'t complete this request.</string>
+    <string name="error_http_500_title">Something went wrong</string>
+    <string name="error_http_500_message">Our server ran into a problem. Please try again in a moment.</string>
+    <string name="error_http_502_title">Server unreachable</string>
+    <string name="error_http_502_message">We couldn\'t reach our movie service. Please try again in a moment.</string>
+    <string name="error_http_503_title">Service unavailable</string>
+    <string name="error_http_503_message">CineStream is temporarily unavailable. Please try again soon.</string>
+    <string name="error_http_504_title">Server timed out</string>
+    <string name="error_http_504_message">Our server took too long to respond. Please try again.</string>
+    <string name="error_http_5xx_title">Server error</string>
+    <string name="error_http_5xx_message">Something went wrong on our side. Please try again later.</string>
+
+    <!-- Fallbacks by backend error code: the exact texts of the backend contract -->
+    <string name="error_code_missing_parameter_title">Something\'s missing</string>
+    <string name="error_code_missing_parameter_message">We couldn\'t open this page because some information is missing.</string>
+    <string name="error_code_invalid_parameter_title">Invalid request</string>
+    <string name="error_code_invalid_parameter_message">We couldn\'t open this page. Please go back and try again.</string>
+    <string name="error_code_method_not_allowed_title">Not supported</string>
+    <string name="error_code_method_not_allowed_message">This action isn\'t supported.</string>
+    <string name="error_code_screen_not_found_title">Page not found</string>
+    <string name="error_code_screen_not_found_message">This page doesn\'t exist or has moved.</string>
+    <string name="error_code_movie_not_found_title">Movie not found</string>
+    <string name="error_code_movie_not_found_message">We couldn\'t find this movie. It may have been removed.</string>
+    <string name="error_code_content_unavailable_title">Nothing to show yet</string>
+    <string name="error_code_content_unavailable_message">We couldn\'t load movies right now. Please try again in a moment.</string>
+    <string name="error_code_rate_limited_title">Too many requests</string>
+    <string name="error_code_rate_limited_message">We\'re getting a lot of requests. Please try again in a few seconds.</string>
+    <string name="error_code_upstream_timeout_title">Taking too long</string>
+    <string name="error_code_upstream_timeout_message">The movie service is slow to respond. Please try again.</string>
+    <string name="error_code_upstream_error_title">Service problem</string>
+    <string name="error_code_upstream_error_message">We couldn\'t reach the movie service. Please try again.</string>
+    <string name="error_code_service_misconfigured_title">Service unavailable</string>
+    <string name="error_code_service_misconfigured_message">CineStream is temporarily unavailable. We\'re working on it.</string>
+    <string name="error_code_maintenance_title">Under maintenance</string>
+    <string name="error_code_maintenance_message">CineStream is being updated. Please check back soon.</string>
+    <string name="error_code_internal_error_title">Something went wrong</string>
+    <string name="error_code_internal_error_message">An unexpected error occurred. Please try again.</string>
+</resources>

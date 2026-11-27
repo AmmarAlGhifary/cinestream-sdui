@@ -24,6 +24,7 @@ Reusable foundational libraries and shared data layer logic.
   - `data/repository`: Fetches SDUI JSON and decodes it with `Blueprint.decodeScreen`. Folds `toolbar` + `body` into a `screen_scaffold` node.
   - `domain/model`: CineStream component and action models, implementing Blueprint's `SduiComponent` / `SduiAction` interfaces.
   - `domain/usecase`: SDUI business logic.
+  - `presentation/error`: `ErrorMapper`, the one place that maps an `AppError` (backend code first, HTTP status second) to user-facing text and a retry decision.
   - `presentation/components`: Compose renderers, each receiving Blueprint's `SduiScope` to render children and dispatch actions.
   - `presentation/registry`: `CineStreamRegistry` binds every JSON `type` to a model and renderer; `CineStreamBlueprint` is the shared instance, provided by Hilt and passed to the renderer through `LocalSduiBlueprint`.
   - Tolerant decoding: an unknown or malformed node degrades alone (placeholder in debug, nothing in release) and is logged under the `Blueprint` tag.
@@ -32,10 +33,12 @@ Reusable foundational libraries and shared data layer logic.
   Handles external API communications and networking infrastructure.
   - `di`: Network module dependency injection provisioning.
   - `source`: Retrofit API services, interceptors, and network data sources.
+  - `error`: `AppError`, the typed list of load failures, and the parser for the backend's error body and `Retry-After`.
 
 * **`core:designsystems`**
   Shared UI design system, tokens, typography, and themes.
   - `theme`: Compose Material 3 theme definitions, color palettes, and typography used globally.
+  - `ErrorDialog` (the single entry point that draws an error, from an `ErrorDialogModel`) and `RetryPlaceholder`.
 
 #### 3. `feature`
 Feature modules implementing specific screens driven by the SDUI engine under an MVVM architecture.

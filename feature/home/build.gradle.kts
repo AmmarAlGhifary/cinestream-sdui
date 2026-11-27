@@ -34,6 +34,7 @@ android {
 }
 
 dependencies {
+    implementation(project(":core:designsystems"))
     implementation(project(":core:sdui"))
 
     implementation(libs.androidx.core.ktx)

@@ -1,5 +1,6 @@
 package com.ammar.sdui
 
+import com.ammar.network.error.AppError
 import com.ammar.network.source.NetworkDataSource
 import com.ammar.sdui.data.repository.SduiRepositoryImpl
 import com.ammar.sdui.domain.model.SduiAppBar
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -77,7 +79,7 @@ class BlueprintDecodeTest {
     @Test
     fun `an unreadable payload is still a failure`() {
         val result = decode("<html>502 Bad Gateway</html>")
-        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Parse)
         assertNull(result.getOrNull())
     }
 
@@ -86,14 +88,14 @@ class BlueprintDecodeTest {
         val result = decode(
             """{"type":"screen","screen_id":"movie_list_screen","body":{"type":"vertical_list","items":"oops"}}"""
         )
-        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Parse)
         assertEquals(listOf(DecodeErrorKind.InvalidComponent), errors.map { it.kind })
     }
 
     @Test
     fun `a body root this app does not know fails the screen`() {
         val result = decode("""{"type":"screen","screen_id":"x","body":{"type":"grid"}}""")
-        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Parse)
         assertEquals(listOf(DecodeErrorKind.UnregisteredType), errors.map { it.kind })
     }
 
@@ -121,6 +123,19 @@ class BlueprintDecodeTest {
     @Test
     fun `a hostile nesting depth is a failure, not a crash`() {
         val result = decode("""{"screen_id":"x","body":""" + "[".repeat(200_000) + "]".repeat(200_000) + "}")
-        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Parse)
+    }
+
+    @Test
+    fun `a network failure keeps its type`() {
+        val failure = AppError.Http(503, serverCode = "MAINTENANCE")
+        val source = object : NetworkDataSource {
+            override fun getScreenBlueprint(screenId: String, queryParams: Map<String, String>): Flow<Result<String>> =
+                flowOf(Result.failure(failure))
+        }
+
+        val result = runBlocking { SduiRepositoryImpl(source, blueprint).getScreen("any").first() }
+
+        assertSame(failure, result.exceptionOrNull())
     }
 }

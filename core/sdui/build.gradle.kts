@@ -31,6 +31,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     testOptions {
         // Robolectric Compose tests need the merged manifest and resources.
@@ -39,7 +40,9 @@ android {
 }
 
 dependencies {
-    implementation(project(":core:network"))
+    // AppError and ErrorDialogModel are part of this module's API.
+    api(project(":core:network"))
+    api(project(":core:designsystems"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

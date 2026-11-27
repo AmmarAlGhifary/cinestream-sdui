@@ -1,5 +1,7 @@
 package com.ammar.sdui.data.repository
 
+import com.ammar.network.error.AppError
+import com.ammar.network.error.toAppError
 import com.ammar.network.source.NetworkDataSource
 import com.ammar.sdui.domain.model.SduiScaffold
 import com.ammar.sdui.domain.repository.SduiRepository
@@ -18,9 +20,20 @@ class SduiRepositoryImpl @Inject constructor(
     private val blueprint: Blueprint
 ) : SduiRepository {
 
+    /** A failure is always an [AppError]. */
     override fun getScreen(screenId: String, params: Map<String, String>): Flow<Result<SduiScreen>> =
         networkDataSource.getScreenBlueprint(screenId, params).map { result ->
-            result.mapCatching { jsonString -> decode(jsonString) }
+            result.fold(
+                onSuccess = { jsonString -> decodeOrParseError(jsonString) },
+                onFailure = { Result.failure(it.toAppError()) }
+            )
+        }
+
+    private fun decodeOrParseError(jsonString: String): Result<SduiScreen> =
+        try {
+            Result.success(decode(jsonString))
+        } catch (e: Exception) {
+            Result.failure(AppError.Parse(e))
         }
 
     /**

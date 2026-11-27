@@ -4,15 +4,19 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ammar.detail.state.DetailUiState
+import com.ammar.network.error.AppError
+import com.ammar.network.error.toAppError
 import com.ammar.sdui.domain.model.ApiAction
 import io.github.ammaralghifary.blueprint.model.NavigateAction
 import io.github.ammaralghifary.blueprint.model.SduiAction
 import com.ammar.sdui.domain.model.ShareAction
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,34 +32,67 @@ class DetailViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    private var currentMovieId: String? = null
+    private val movieId: String? = savedStateHandle.get<String>("movie_id")
+
+    private var loadJob: Job? = null
 
     init {
-        val movieId = savedStateHandle.get<String>("movie_id")
-        if (movieId != null) {
-            currentMovieId = movieId
-            fetchDetailScreen(movieId)
-        } else {
-            _uiState.value = DetailUiState.Error("Movie ID is missing from navigation")
+        load()
+    }
+
+    /** The retry action: refreshes content that is already shown, otherwise loads from scratch. */
+    fun reload() {
+        if (_uiState.value is DetailUiState.Success) refreshScreen() else load()
+    }
+
+    fun refreshScreen() {
+        val id = movieId ?: return
+        hideError()
+        _isRefreshing.value = true
+        fetch(id)
+    }
+
+    fun dismissError() = hideError()
+
+    private fun load() {
+        _isRefreshing.value = false
+        val id = movieId
+        if (id == null) {
+            _uiState.value = DetailUiState.Error(AppError.InvalidRequest())
+            return
+        }
+        _uiState.value = DetailUiState.Loading
+        fetch(id)
+    }
+
+    private fun fetch(id: String) {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            getSduiScreenUseCase(
+                screenID = "movie_detail_screen",
+                params = mapOf("movie_id" to id)
+            ).collect { result ->
+                result.fold(
+                    onSuccess = { _uiState.value = DetailUiState.Success(it) },
+                    onFailure = { failure ->
+                        val error = failure.toAppError()
+                        _uiState.update { state ->
+                            if (state is DetailUiState.Success) state.copy(refreshError = error)
+                            else DetailUiState.Error(error)
+                        }
+                    }
+                )
+                _isRefreshing.value = false
+            }
         }
     }
 
-    private fun fetchDetailScreen(movieId: String) {
-        viewModelScope.launch {
-            _uiState.value = DetailUiState.Loading
-            getSduiScreenUseCase(
-                screenID = "movie_detail_screen",
-                params = mapOf("movie_id" to movieId)
-            ).collect { result ->
-                result.fold(
-                    onSuccess = { sduiScreen ->
-                        _uiState.value = DetailUiState.Success(sduiScreen)
-                    },
-                    onFailure = { error ->
-                        _uiState.value =
-                            DetailUiState.Error(error.message ?: "Unknown Error Occurred")
-                    }
-                )
+    private fun hideError() {
+        _uiState.update { state ->
+            when (state) {
+                is DetailUiState.Success -> state.copy(refreshError = null)
+                is DetailUiState.Error -> state.copy(showDialog = false)
+                DetailUiState.Loading -> state
             }
         }
     }
@@ -81,32 +118,6 @@ class DetailViewModel @Inject constructor(
             }
             is ApiAction, is ShareAction -> {
                 android.util.Log.d("SduiAction", "Unhandled action: ${action.javaClass.simpleName}")
-            }
-        }
-    }
-
-    fun refreshScreen() {
-        val movieId = currentMovieId ?: return
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            try {
-                getSduiScreenUseCase(
-                    screenID = "movie_detail_screen",
-                    params = mapOf("movie_id" to movieId)
-                ).collect { result ->
-                    result.fold(
-                        onSuccess = { sduiScreen ->
-                            _uiState.value = DetailUiState.Success(sduiScreen)
-                        },
-                        onFailure = { error ->
-                            _uiState.value = DetailUiState.Error(error.message ?: "Unknown error")
-                        }
-                    )
-                    _isRefreshing.value = false
-                }
-            } catch (e: Exception) {
-                _uiState.value = DetailUiState.Error(e.message ?: "Unknown error")
-                _isRefreshing.value = false
             }
         }
     }

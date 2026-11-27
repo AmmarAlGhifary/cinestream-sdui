@@ -25,6 +25,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.ammaralghifary.blueprint.model.NavigateAction
 import com.ammar.sdui.presentation.SduiScreenRenderer
 import com.ammar.sdui.presentation.content
+import com.ammar.sdui.presentation.error.errorDialogModel
+import com.ammar.designsystems.ErrorDialog
+import com.ammar.designsystems.RetryPlaceholder
 import com.ammar.search.state.SearchUiState
 import com.ammar.search.viewmodel.SearchViewModel
 
@@ -83,11 +86,14 @@ fun SearchScreen(
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                     is SearchUiState.Error -> {
-                        Text(
-                            text = "Error: ${state.message}",
-                            modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        RetryPlaceholder(onRetry = if (state.showDialog) null else viewModel::reload)
+                        if (state.showDialog) {
+                            ErrorDialog(
+                                model = errorDialogModel(state.error),
+                                onRetry = viewModel::reload,
+                                onDismiss = viewModel::dismissError
+                            )
+                        }
                     }
                     is SearchUiState.Success -> {
                         SduiScreenRenderer(
