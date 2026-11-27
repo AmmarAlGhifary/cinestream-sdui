@@ -27,6 +27,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,6 +42,12 @@ import com.ammar.sdui.domain.model.SduiListItem
 import com.ammar.sdui.domain.model.SduiScaffold
 import com.ammar.sdui.domain.model.SduiVerticalList
 import io.github.ammaralghifary.blueprint.render.SduiScope
+
+/**
+ * True below a container that already scrolls vertically. A second vertical scroller there would be
+ * measured with an infinite height and crash, so containers lay their content out in full instead.
+ */
+private val LocalInVerticalScroll = compositionLocalOf { false }
 
 @Composable
 fun SduiScaffoldComponent(model: SduiScaffold, modifier: Modifier, scope: SduiScope) {
@@ -73,23 +81,42 @@ fun SduiAppBarComponent(model: SduiAppBar, modifier: Modifier, scope: SduiScope)
 
 @Composable
 fun SduiColumnComponent(model: SduiColumn, modifier: Modifier, scope: SduiScope) {
+    val scrolling = if (LocalInVerticalScroll.current) Modifier else Modifier.verticalScroll(rememberScrollState())
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .then(scrolling)
     ) {
-        scope.RenderAll(model.children)
+        CompositionLocalProvider(LocalInVerticalScroll provides true) {
+            scope.RenderAll(model.children)
+        }
     }
 }
 
 @Composable
 fun SduiVerticalListComponent(model: SduiVerticalList, modifier: Modifier, scope: SduiScope) {
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        items(model.items) { item -> scope.Render(item) }
+    val padding = PaddingValues(horizontal = 16.dp, vertical = 16.dp)
+    val spacing = Arrangement.spacedBy(12.dp)
+    if (LocalInVerticalScroll.current) {
+        // The parent scrolls, so the list is as tall as its items.
+        Column(
+            modifier = modifier.fillMaxWidth().padding(padding),
+            verticalArrangement = spacing
+        ) {
+            scope.RenderAll(model.items)
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            contentPadding = padding,
+            verticalArrangement = spacing
+        ) {
+            items(model.items) { item ->
+                CompositionLocalProvider(LocalInVerticalScroll provides true) {
+                    scope.Render(item)
+                }
+            }
+        }
     }
 }
 

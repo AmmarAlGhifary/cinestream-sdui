@@ -75,18 +75,19 @@ val CineStreamRegistry = sduiRegistry {
     action("share_action", ShareAction::class, ShareAction.serializer())
 }
 
-/** Synthetic type the repository wraps `toolbar` + `body` in, see SduiRepositoryImpl. Never sent by the server. */
+/** Registry key of the synthetic [SduiScaffold] the repository builds from `toolbar` + `body`. Never sent by the server. */
 internal const val SCAFFOLD_TYPE = "screen_scaffold"
 
 /**
- * The one Blueprint instance shared by decoding (repository) and rendering (UI). Decode problems
- * are logged by kind and node type only: `DecodeError.message` carries no payload text, `raw` does.
+ * The app's Blueprint instance. Hilt provides it to the repository (decoding) and to the app root,
+ * which hands it to the UI through LocalSduiBlueprint. Each decode problem is logged with
+ * `DecodeError.toString`, which leaves out the payload and any type string the registry does not know.
  */
 object CineStreamBlueprint {
     val instance: Blueprint by lazy {
         Blueprint(
             registry = CineStreamRegistry,
-            onDecodeError = { Log.w(TAG, "${it.kind} [${it.type}]: ${it.message}") },
+            onDecodeError = { Log.w(TAG, it.toString()) },
             onDecoded = { screen, errors ->
                 if (errors.isNotEmpty()) Log.w(TAG, "${screen.id}: decoded with ${errors.size} problem(s)")
             },

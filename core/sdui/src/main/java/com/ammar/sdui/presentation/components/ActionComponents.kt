@@ -76,13 +76,7 @@ fun SduiIconButtonComponent(
         else -> Icons.Default.Warning //Fallback
     }
     IconButton(
-        onClick = {
-            android.util.Log.d(
-                "SduiIconButton",
-                "Clicked: ${model.iconName}, action: ${model.action}"
-            )
-            model.action?.let(scope::dispatch)
-        },
+        onClick = { model.action?.let(scope::dispatch) },
         modifier = modifier
     ) {
         Icon(

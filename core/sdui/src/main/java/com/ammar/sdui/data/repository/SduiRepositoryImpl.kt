@@ -1,15 +1,17 @@
 package com.ammar.sdui.data.repository
 
 import com.ammar.network.source.NetworkDataSource
+import com.ammar.sdui.domain.model.SduiScaffold
 import com.ammar.sdui.domain.repository.SduiRepository
-import com.ammar.sdui.presentation.registry.SCAFFOLD_TYPE
 import io.github.ammaralghifary.blueprint.Blueprint
+import io.github.ammaralghifary.blueprint.model.SduiComponent
 import io.github.ammaralghifary.blueprint.model.SduiScreen
 import io.github.ammaralghifary.blueprint.model.UnknownComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import javax.inject.Inject
 
 class SduiRepositoryImpl @Inject constructor(
@@ -19,26 +21,36 @@ class SduiRepositoryImpl @Inject constructor(
 
     override fun getScreen(screenId: String, params: Map<String, String>): Flow<Result<SduiScreen>> =
         networkDataSource.getScreenBlueprint(screenId, params).map { result ->
-            result.map { jsonString -> decode(jsonString) }.mapCatching { screen ->
-                // Only an unreadable envelope fails the screen; a broken node inside it degrades on its own.
-                val body = screen.body
-                if (body is UnknownComponent && body.error != null) {
-                    throw IllegalStateException("Failed to parse SDUI JSON: ${body.error}")
-                }
-                screen
-            }
+            result.mapCatching { jsonString -> decode(jsonString) }
         }
 
+    /**
+     * Only an unreadable envelope or an unusable body root (invalid, or a type this app does not know)
+     * fails the screen. A broken node further down degrades on its own.
+     */
     private fun decode(jsonString: String): SduiScreen {
-        val root = runCatching { blueprint.json.parseToJsonElement(jsonString) }.getOrNull() as? JsonObject
-            ?: return blueprint.decodeScreen(jsonString) // let Blueprint report the unreadable payload
-        val body = root["body"] as? JsonObject ?: return blueprint.decodeScreen(root)
-
-        val scaffold = buildMap {
-            put("type", JsonPrimitive(SCAFFOLD_TYPE))
-            put("body", body)
-            (root["toolbar"] as? JsonObject)?.let { put("toolbar", it) }
+        // Blueprint parses first: it checks the nesting depth on the raw text, before any parser runs.
+        val screen = blueprint.decodeScreen(jsonString)
+        val body = screen.body
+        if (body is UnknownComponent) {
+            throw IllegalStateException("Failed to parse SDUI JSON: ${body.error ?: "unsupported screen body type"}")
         }
-        return blueprint.decodeScreen(JsonObject(root + ("body" to JsonObject(scaffold))))
+
+        // Safe to parse again, the text passed that check.
+        val root = blueprint.json.parseToJsonElement(jsonString).jsonObject
+        val toolbar = (root["toolbar"] as? JsonObject)?.let { decodeToolbar(screen.id, it) }
+        return screen.copy(body = SduiScaffold(toolbar = toolbar, body = body))
+    }
+
+    /**
+     * Blueprint's screen format has no toolbar field, so the toolbar is decoded as the body of its own
+     * screen. That keeps it at the nesting depth the server sent it at.
+     */
+    private fun decodeToolbar(screenId: String?, toolbar: JsonObject): SduiComponent {
+        val envelope = buildMap {
+            screenId?.let { put("screen_id", JsonPrimitive(it)) }
+            put("body", toolbar)
+        }
+        return blueprint.decodeScreen(JsonObject(envelope)).body
     }
 }
