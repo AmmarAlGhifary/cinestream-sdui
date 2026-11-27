@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("detail/$movieId")
                                 },
                                 onNavigateToList = { listType ->
-                                    navController.navigate("movie_list_screen/$listType")
+                                    navController.navigate(movieListRoute(listType))
                                 },
                                 onNavigateToSearch = {
                                     navController.navigate("search_screen")
@@ -74,7 +74,7 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("detail/$movieId")
                                 },
                                 onNavigateToList = { listType, movieId ->
-                                    navController.navigate("movie_list_screen/$listType?movie_id=$movieId")
+                                    navController.navigate(movieListRoute(listType, movieId))
                                 })
                         }
 
