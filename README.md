@@ -121,3 +121,47 @@ chmod +x gradlew
 # Run unit tests across all modules
 ./gradlew testDebugUnitTest
 ```
+
+---
+
+## 🔏 Release signing
+
+A release build is signed only when a signing properties file exists. Without one, `assembleRelease` still works and produces `app-release-unsigned.apk`. The keystore and the properties file stay **outside the repository**.
+
+### 1. Create the keystore (once)
+Run this yourself. `keytool` asks for the password, so it stays out of your shell history.
+```bash
+keytool -genkeypair -v \
+  -keystore ~/Documents/AgentStuff/cinestream-release.jks \
+  -storetype PKCS12 \
+  -alias cinestream \
+  -keyalg RSA -keysize 4096 \
+  -validity 9125
+chmod 600 ~/Documents/AgentStuff/cinestream-release.jks
+```
+Back up the keystore and its password. Without them, installed copies of the app can no longer be updated.
+
+### 2. Create the properties file
+Default location: `~/Documents/AgentStuff/cinestream-release-signing.properties` (`chmod 600` it too).
+```properties
+storeFile=~/Documents/AgentStuff/cinestream-release.jks
+storePassword=<your-password>
+keyAlias=cinestream
+# A PKCS12 keystore uses the store password for the key as well
+keyPassword=<your-password>
+```
+This is a Java properties file, so write a backslash in a password as `\\`.
+
+To keep the file somewhere else, pass `-PCINESTREAM_SIGNING_PROPERTIES=/path/to/file`, or set `CINESTREAM_SIGNING_PROPERTIES` in `~/.gradle/gradle.properties`. A release build fails if the file lacks a value or names a missing keystore.
+
+### 3. Build and check
+```bash
+./gradlew :app:assembleRelease
+$ANDROID_HOME/build-tools/<version>/apksigner verify --print-certs app/build/outputs/apk/release/app-release.apk
+```
+
+### SHA-256 fingerprint
+Needed later for Android App Links (`assetlinks.json`):
+```bash
+keytool -list -v -keystore ~/Documents/AgentStuff/cinestream-release.jks -alias cinestream | grep SHA256
+```

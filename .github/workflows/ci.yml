@@ -38,7 +38,7 @@ jobs:
           cache-read-only: ${{ github.ref != 'refs/heads/development' }}
 
       - name: Build and unit test
-        run: ./gradlew assembleDebug testDebugUnitTest --continue --stacktrace
+        run: ./gradlew assembleDebug assembleRelease testDebugUnitTest --continue --stacktrace
 
       - name: Upload test reports
         if: failure()
