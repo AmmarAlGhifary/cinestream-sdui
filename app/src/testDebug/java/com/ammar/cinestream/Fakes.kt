@@ -3,6 +3,7 @@ package com.ammar.cinestream
 import com.ammar.network.session.Account
 import com.ammar.network.session.SessionRepository
 import com.ammar.network.session.SessionState
+import com.ammar.network.session.SignInOutcome
 import com.ammar.sdui.domain.model.ActionResult
 import com.ammar.sdui.domain.model.ApiAction
 import com.ammar.sdui.domain.repository.ActionRepository
@@ -38,7 +39,7 @@ class FakeSessions : SessionRepository {
     override val signIns = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     var start: Result<String> = Result.success("https://tmdb.example/approve")
-    var complete: Result<Account> = Result.success(Account("7", "tester"))
+    var complete: Result<SignInOutcome> = Result.success(SignInOutcome.SignedIn(Account("7", "tester")))
     var starts = 0
     val links = mutableListOf<String>()
 
@@ -47,9 +48,9 @@ class FakeSessions : SessionRepository {
         return start
     }
 
-    override suspend fun completeSignIn(link: String): Result<Account> {
+    override suspend fun completeSignIn(link: String): Result<SignInOutcome> {
         links += link
-        return complete.onSuccess { signIns.tryEmit(Unit) }
+        return complete.onSuccess { if (it is SignInOutcome.SignedIn) signIns.tryEmit(Unit) }
     }
 
     override suspend fun signOut() = Result.success(Unit)

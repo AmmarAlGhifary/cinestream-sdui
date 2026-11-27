@@ -63,18 +63,25 @@ class SessionStoreTest {
     }
 
     @Test
-    fun `a value that was tampered with or lost its key means signed out`() {
-        open().save(StoredSession("test-session", "7", "tester"))
+    fun `a value that was tampered with or written with another key means signed out`() {
+        fun saved(): String {
+            open().save(StoredSession("test-session", "7", "tester"))
+            return prefs.values.getValue("session")
+        }
 
+        saved()
         assertEquals(SessionState.SignedOut, SessionStore(storage(prefs, newKey()), Clock.systemUTC()).state.value)
 
-        val bytes = Base64.getDecoder().decode(prefs.values.getValue("session"))
+        val bytes = Base64.getDecoder().decode(saved())
         bytes[bytes.lastIndex] = (bytes.last() + 1).toByte()
         prefs.values["session"] = Base64.getEncoder().encodeToString(bytes)
         assertEquals(SessionState.SignedOut, open().state.value)
 
-        prefs.values["session"] = "not base64 !"
-        assertNull(open().sessionId())
+        for (garbage in listOf("not base64 !", "", "AAAA")) {
+            prefs.values["session"] = garbage
+            assertNull(garbage, open().sessionId())
+            assertFalse(garbage, "session" in prefs.values)
+        }
     }
 
     @Test

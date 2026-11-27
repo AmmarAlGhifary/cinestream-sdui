@@ -11,15 +11,25 @@ import javax.crypto.spec.GCMParameterSpec
 internal interface SecretCipher {
     fun encrypt(plain: ByteArray): ByteArray
     fun decrypt(sealed: ByteArray): ByteArray
+
+    /** Throws the key away, so the next call starts with a new one. */
+    fun reset()
+}
+
+/** Where the cipher's key lives. */
+internal interface KeySource {
+    /** The key, created if there is none. */
+    fun get(): SecretKey
+    fun delete()
 }
 
 /** AES-GCM. The output is the 12-byte IV the provider picked, followed by ciphertext and tag. */
-internal class AesGcmCipher(private val key: () -> SecretKey) : SecretCipher {
+internal class AesGcmCipher(private val keys: KeySource) : SecretCipher {
 
     override fun encrypt(plain: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
         // No IV is passed in: AndroidKeyStore refuses caller-chosen IVs, which prevents reuse.
-        cipher.init(Cipher.ENCRYPT_MODE, key())
+        cipher.init(Cipher.ENCRYPT_MODE, keys.get())
         val iv = cipher.iv
         check(iv.size == IV_BYTES)
         return iv + cipher.doFinal(plain)
@@ -27,9 +37,11 @@ internal class AesGcmCipher(private val key: () -> SecretKey) : SecretCipher {
 
     override fun decrypt(sealed: ByteArray): ByteArray {
         val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.DECRYPT_MODE, key(), GCMParameterSpec(TAG_BITS, sealed, 0, IV_BYTES))
+        cipher.init(Cipher.DECRYPT_MODE, keys.get(), GCMParameterSpec(TAG_BITS, sealed, 0, IV_BYTES))
         return cipher.doFinal(sealed, IV_BYTES, sealed.size - IV_BYTES)
     }
+
+    override fun reset() = keys.delete()
 
     private companion object {
         const val TRANSFORMATION = "AES/GCM/NoPadding"
@@ -38,15 +50,12 @@ internal class AesGcmCipher(private val key: () -> SecretKey) : SecretCipher {
     }
 }
 
-/** A key that never leaves AndroidKeyStore, created on first use. */
-internal object AndroidKeystoreKey {
-
-    private const val PROVIDER = "AndroidKeyStore"
+/** A key that never leaves AndroidKeyStore. */
+internal class AndroidKeystoreKey(private val alias: String) : KeySource {
 
     @Synchronized
-    fun getOrCreate(alias: String): SecretKey {
-        val keyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
-        (keyStore.getKey(alias, null) as? SecretKey)?.let { return it }
+    override fun get(): SecretKey {
+        (keyStore().getKey(alias, null) as? SecretKey)?.let { return it }
 
         val generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, PROVIDER)
         generator.init(
@@ -57,5 +66,14 @@ internal object AndroidKeystoreKey {
                 .build()
         )
         return generator.generateKey()
+    }
+
+    @Synchronized
+    override fun delete() = keyStore().deleteEntry(alias)
+
+    private fun keyStore(): KeyStore = KeyStore.getInstance(PROVIDER).apply { load(null) }
+
+    private companion object {
+        const val PROVIDER = "AndroidKeyStore"
     }
 }

@@ -45,7 +45,7 @@ class SessionStore internal constructor(
     internal fun sessionId(): String? = synchronized(lock) { session?.sessionId }
 
     internal fun save(newSession: StoredSession) = synchronized(lock) {
-        storage.write(SESSION, Json.encodeToString(StoredSession.serializer(), newSession))
+        write(SESSION, Json.encodeToString(StoredSession.serializer(), newSession))
         session = newSession
         _state.value = stateOf(newSession)
     }
@@ -64,7 +64,7 @@ class SessionStore internal constructor(
     internal fun pending(): PendingSignIn? = synchronized(lock) { read(PENDING) }
 
     internal fun savePending(pending: PendingSignIn) = synchronized(lock) {
-        storage.write(PENDING, Json.encodeToString(PendingSignIn.serializer(), pending))
+        write(PENDING, Json.encodeToString(PendingSignIn.serializer(), pending))
     }
 
     internal fun clearPending() = synchronized(lock) {
@@ -86,6 +86,14 @@ class SessionStore internal constructor(
         val matches = lapsedToken == requestToken
         if (matches) lapsedToken = null
         matches
+    }
+
+    private fun write(name: String, value: String) {
+        // A new key means the stored session went with the old one.
+        if (storage.write(name, value)) {
+            session = null
+            _state.value = SessionState.SignedOut
+        }
     }
 
     private inline fun <reified T> read(name: String): T? =

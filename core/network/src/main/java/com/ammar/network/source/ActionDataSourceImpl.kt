@@ -16,9 +16,11 @@ import java.io.IOException
 import kotlin.coroutines.resume
 
 internal class ActionDataSourceImpl(
-    private val client: OkHttpClient,
+    client: OkHttpClient,
     private val baseUrl: HttpUrl
 ) : ActionDataSource {
+
+    private val client = client.withoutRedirects()
 
     override suspend fun send(method: String, endpoint: String, body: JsonObject?): Result<String> = apiResult {
         val verb = method.uppercase()

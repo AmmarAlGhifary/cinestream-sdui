@@ -11,6 +11,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.ammar.cinestream.auth.SignInHost
 import com.ammar.cinestream.auth.SignInViewModel
 import com.ammar.network.error.AppError
+import com.ammar.network.session.SignInOutcome
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
@@ -93,6 +94,30 @@ class SignInTest {
 
         assertEquals(listOf(link, link), sessions.links)
         assertEquals(0, sessions.starts)
+    }
+
+    @Test
+    fun `an ignored link shows nothing`() {
+        sessions.complete = Result.success(SignInOutcome.Ignored)
+        host()
+
+        run { viewModel.onLink(link) }
+
+        assertEquals(listOf(link), sessions.links)
+        compose.onNodeWithText("Sign-in didn't finish").assertDoesNotExist()
+        compose.onNodeWithText("Close").assertDoesNotExist()
+    }
+
+    @Test
+    fun `an ignored link leaves an earlier error on screen`() {
+        sessions.complete = Result.failure(AppError.SignInFailed())
+        host()
+        run { viewModel.onLink(link) }
+
+        sessions.complete = Result.success(SignInOutcome.Ignored)
+        run { viewModel.onLink("cinestream://auth/tmdb?request_token=forged&approved=true") }
+
+        compose.onNodeWithText("Sign-in didn't finish").assertIsDisplayed()
     }
 
     @Test

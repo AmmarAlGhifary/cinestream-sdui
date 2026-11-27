@@ -52,23 +52,26 @@ internal class SessionRepositoryImpl(
         }
     }
 
-    override suspend fun completeSignIn(link: String): Result<Account> = completing.withLock {
+    override suspend fun completeSignIn(link: String): Result<SignInOutcome> = completing.withLock {
         val callback = SignInCallback.parse(link)
+        val token = callback?.requestToken
         store.dropExpiredPending()
-        val pending = store.pending()
-        // A link that does not carry our token is ignored: it must not cancel the real sign-in.
-        if (callback == null || pending == null || callback.requestToken != pending.requestToken) {
-            callback?.requestToken?.let { store.takeLapsed(it) }
+        if (token != null && store.takeLapsed(token)) {
             return@withLock Result.failure(AppError.SignInFailed())
         }
-        if (!callback.approved) {
+        val pending = store.pending()
+        // A link that does not carry our token must neither cancel the real sign-in nor bother anyone.
+        if (pending == null || token != pending.requestToken) {
+            return@withLock Result.success(SignInOutcome.Ignored)
+        }
+        if (callback?.approved != true) {
             store.clearPending()
             return@withLock Result.failure(AppError.SignInFailed())
         }
         createSession(pending)
     }
 
-    private suspend fun createSession(pending: PendingSignIn): Result<Account> = apiResult {
+    private suspend fun createSession(pending: PendingSignIn): Result<SignInOutcome> = apiResult {
         val body = buildJsonObject {
             put("request_token", pending.requestToken)
             put("sign_in_secret", pending.secret)
@@ -81,7 +84,7 @@ internal class SessionRepositoryImpl(
             store.save(StoredSession(created.sessionId, account.id, account.username))
             store.clearPending()
             _signIns.tryEmit(Unit)
-            account
+            SignInOutcome.SignedIn(account) as SignInOutcome
         }
     }.recoverCatching { error ->
         if (error is AppError.Http && error.status in 400..499 && error.status != 408 && error.status != 429) {

@@ -6,6 +6,7 @@ import com.ammar.network.error.AppError
 import com.ammar.network.error.toAppError
 import com.ammar.network.session.SessionRepository
 import com.ammar.network.session.SignInCallback
+import com.ammar.network.session.SignInOutcome
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -32,7 +33,7 @@ class SignInViewModel @Inject constructor(
     val approvalPages: Flow<String> = pages.receiveAsFlow()
 
     private var starting: Job? = null
-    private var completing: Job? = null
+    private val linksInProgress = mutableSetOf<String>()
     private var lastAttempt: () -> Unit = ::signIn
 
     fun signIn() {
@@ -46,13 +47,18 @@ class SignInViewModel @Inject constructor(
         }
     }
 
-    /** Takes any link the app was opened with; only the sign-in link does something. */
+    /** Takes any link the app was opened with; only the sign-in being waited for does something. */
     fun onLink(link: String) {
-        if (SignInCallback.parse(link) == null || completing?.isActive == true) return
-        _error.value = null
-        completing = viewModelScope.launch {
-            sessionRepository.completeSignIn(link).onFailure { failure ->
-                fail(failure.toAppError()) { onLink(link) }
+        // The same link twice is handled once. A different one must not be lost behind it.
+        if (SignInCallback.parse(link) == null || !linksInProgress.add(link)) return
+        viewModelScope.launch {
+            try {
+                sessionRepository.completeSignIn(link).fold(
+                    onSuccess = { if (it is SignInOutcome.SignedIn) _error.value = null },
+                    onFailure = { failure -> fail(failure.toAppError()) { onLink(link) } }
+                )
+            } finally {
+                linksInProgress.remove(link)
             }
         }
     }
@@ -60,7 +66,10 @@ class SignInViewModel @Inject constructor(
     /** No browser could open the approval page. */
     fun onPageUnavailable() = fail(AppError.Unknown(), ::signIn)
 
-    fun retry() = lastAttempt()
+    fun retry() {
+        _error.value = null
+        lastAttempt()
+    }
 
     fun dismissError() {
         _error.value = null

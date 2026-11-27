@@ -221,6 +221,21 @@ class AuthNetworkingTest {
     }
 
     @Test
+    fun `an action does not follow a redirect`() = runBlocking {
+        for (status in listOf(301, 302, 307, 308)) {
+            backend.enqueue(
+                MockResponse().setResponseCode(status).addHeader("Location", elsewhere.url("/take"))
+            )
+            elsewhere.enqueue(MockResponse().setBody("""{"is_favorite":true}"""))
+
+            val error = actions.send("POST", "/api/favorite", null).exceptionOrNull() as AppError.Http
+
+            assertEquals(status, error.status)
+        }
+        assertEquals(0, elsewhere.requestCount)
+    }
+
+    @Test
     fun `an action failure is typed`() = runBlocking {
         backend.enqueue(
             MockResponse().setResponseCode(429).addHeader("Retry-After", "10")

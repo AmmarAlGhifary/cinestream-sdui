@@ -6,9 +6,10 @@ import com.ammar.network.session.SessionRepositoryImpl
 import com.ammar.network.session.SessionState
 import com.ammar.network.session.SessionStore
 import com.ammar.network.session.SignInCallback
+import com.ammar.network.session.SignInOutcome
 import com.ammar.network.session.parseExpiry
-import com.ammar.network.source.AuthApiService
 import com.ammar.network.source.AuthInterceptor
+import com.ammar.network.source.createAuthApi
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.async
@@ -25,7 +26,6 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import retrofit2.Retrofit
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -50,11 +50,7 @@ class SessionRepositoryTest {
         .readTimeout(1, TimeUnit.SECONDS)
         .build()
 
-    private val repository = SessionRepositoryImpl(
-        Retrofit.Builder().baseUrl(server.url("/")).client(client).build().create(AuthApiService::class.java),
-        store,
-        clock
-    )
+    private val repository = SessionRepositoryImpl(createAuthApi(client, server.url("/")), store, clock)
 
     @After
     fun tearDown() = server.shutdown()
@@ -80,13 +76,16 @@ class SessionRepositoryTest {
         repository.startSignIn()
     }
 
-    private fun complete(link: String = approved): Result<Account> =
+    private fun complete(link: String = approved): Result<SignInOutcome> =
         runBlocking { repository.completeSignIn(link) }
 
-    private fun assertRejected(result: Result<Account>) {
+    private fun assertRejected(result: Result<SignInOutcome>) {
         assertTrue(result.exceptionOrNull().toString(), result.exceptionOrNull() is AppError.SignInFailed)
         assertEquals(SessionState.SignedOut, repository.session.value)
     }
+
+    private fun assertIgnored(result: Result<SignInOutcome>) =
+        assertEquals(SignInOutcome.Ignored, result.getOrThrow())
 
     @Test
     fun `starting posts without a body and returns the approve page`() {
@@ -106,9 +105,10 @@ class SessionRepositoryTest {
         server.enqueue(sessionAnswer)
         val signedIn = async(start = CoroutineStart.UNDISPATCHED) { repository.signIns.first() }
 
-        val account = repository.completeSignIn(approved).getOrThrow()
+        val outcome = repository.completeSignIn(approved).getOrThrow()
 
-        assertEquals(Account("7", "tester"), account)
+        val account = Account("7", "tester")
+        assertEquals(SignInOutcome.SignedIn(account), outcome)
         assertEquals(SessionState.SignedIn(account), repository.session.value)
         assertEquals("test-session", store.sessionId())
         assertNull(store.pending())
@@ -133,37 +133,43 @@ class SessionRepositoryTest {
     }
 
     @Test
-    fun `a link for another token is rejected and the real sign-in can still finish`() {
+    fun `a link for another token is ignored and the real sign-in can still finish`() {
         start()
 
-        assertRejected(complete("cinestream://auth/tmdb?request_token=someone-else&approved=true"))
+        assertIgnored(complete("cinestream://auth/tmdb?request_token=someone-else&approved=true"))
+        assertIgnored(complete("cinestream://auth/tmdb?request_token=someone-else&approved=false"))
         assertEquals(1, server.requestCount)
 
         server.enqueue(sessionAnswer)
-        assertTrue(complete().isSuccess)
+        assertTrue(complete().getOrThrow() is SignInOutcome.SignedIn)
     }
 
     @Test
-    fun `links without exactly one token and one approval are rejected`() {
+    fun `links without exactly one token are ignored`() {
         start()
         for (link in listOf(
             "cinestream://auth/tmdb",
             "cinestream://auth/tmdb?approved=true",
             "cinestream://auth/tmdb?request_token=&approved=true",
-            "cinestream://auth/tmdb?request_token=test-token",
-            "cinestream://auth/tmdb?request_token=test-token&approved=TRUE",
             "cinestream://auth/tmdb?request_token=test-token&request_token=test-token&approved=true",
-            "cinestream://auth/tmdb?request_token=test-token&approved=false&approved=true",
             "https://auth/tmdb?request_token=test-token&approved=true",
             "cinestream://auth/other?request_token=test-token&approved=true",
             "cinestream://evil/tmdb?request_token=test-token&approved=true",
             "not a link"
         )) {
-            // A declined link spends the token, so each case starts over.
-            if (store.pending() == null) start()
-            assertRejected(complete(link))
+            assertIgnored(complete(link))
         }
-        assertTrue(server.requestCount >= 1)
+        assertEquals(1, server.requestCount)
+        assertEquals("test-token", store.pending()?.requestToken)
+    }
+
+    @Test
+    fun `our token without exactly one approval is a declined sign-in`() {
+        for (approval in listOf("", "&approved=TRUE", "&approved=false&approved=true")) {
+            start()
+            assertRejected(complete("cinestream://auth/tmdb?request_token=test-token$approval"))
+            assertNull(store.pending())
+        }
         generateSequence { server.takeRequest(0, TimeUnit.SECONDS) }
             .forEach { assertEquals("/api/auth/request_token", it.path) }
     }
@@ -176,9 +182,54 @@ class SessionRepositoryTest {
     }
 
     @Test
-    fun `a link without a sign-in in progress is rejected`() {
-        assertRejected(complete())
+    fun `a link without a sign-in in progress is ignored`() {
+        assertIgnored(complete())
+        assertIgnored(complete("cinestream://auth/tmdb?request_token=test-token&approved=false"))
         assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun `while signed in a stray link is ignored and changes nothing`() {
+        signIn()
+        val signedIn = repository.session.value
+
+        assertIgnored(complete())
+        assertIgnored(complete("cinestream://auth/tmdb?request_token=forged&approved=true"))
+
+        assertEquals(signedIn, repository.session.value)
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `an expired token is explained once, and other links stay ignored`() {
+        start()
+        now = now.plusSeconds(15 * 60)
+
+        assertIgnored(complete("cinestream://auth/tmdb?request_token=someone-else&approved=true"))
+        assertRejected(complete())
+        assertIgnored(complete())
+    }
+
+    @Test
+    fun `a redirect from a sign-in call is not followed`() {
+        val elsewhere = MockWebServer().apply { start() }
+        try {
+            for (status in listOf(307, 308)) {
+                start()
+                server.enqueue(
+                    MockResponse().setResponseCode(status).addHeader("Location", elsewhere.url("/take"))
+                )
+                elsewhere.enqueue(sessionAnswer)
+
+                val error = complete().exceptionOrNull() as AppError.Http
+
+                assertEquals(status, error.status)
+                assertEquals(SessionState.SignedOut, repository.session.value)
+            }
+            assertEquals(0, elsewhere.requestCount)
+        } finally {
+            elsewhere.shutdown()
+        }
     }
 
     @Test
@@ -242,7 +293,7 @@ class SessionRepositoryTest {
 
         server.enqueue(sessionAnswer)
 
-        assertTrue(complete().isSuccess)
+        assertTrue(complete().getOrThrow() is SignInOutcome.SignedIn)
     }
 
     @Test
