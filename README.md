@@ -95,14 +95,20 @@ The Android client dynamically consumes endpoints defined in [cinestream-sdui-ba
 ### 2. Configure Backend Endpoint
 In `gradle.properties`:
 ```properties
-# Local development using local Vercel dev server via Android emulator alias
-BASE_URL=http://10.0.2.2:3000/
+# Debug builds: the local Vercel dev server via the Android emulator alias
+DEBUG_BASE_URL=http://10.0.2.2:3000/
 
-# Production deployment on Vercel
-# BASE_URL=https://sdui-backend.vercel.app/
+# Release builds: the production deployment on Vercel (https only)
+RELEASE_BASE_URL=https://sdui-backend.vercel.app/
 ```
 
-> **Note:** For local HTTP connections, ensure `android:usesCleartextTraffic="true"` is enabled in [`app/src/main/AndroidManifest.xml`](app/src/main/AndroidManifest.xml).
+To override the address for one build, whatever its type:
+```bash
+./gradlew :app:installDebug -PBASE_URL=https://sdui-backend.vercel.app/
+```
+A release build fails if its address does not start with `https://`.
+
+> **Note:** Plain HTTP works only in debug builds, and only to `10.0.2.2` and `localhost` ([`network_security_config.xml`](app/src/debug/res/xml/network_security_config.xml)). A physical device can reach a local server through `adb reverse tcp:3000 tcp:3000` with `-PBASE_URL=http://localhost:3000/`.
 
 ### 3. Build & Install via Gradle CLI
 ```bash
