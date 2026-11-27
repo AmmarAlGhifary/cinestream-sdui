@@ -69,6 +69,7 @@ class MainActivity : ComponentActivity() {
                             )
                         ) {
                             DetailScreen(
+                                onNavigateBack = { navController.popBackStack() },
                                 onNavigateToDetail = { movieId ->
                                     navController.navigate("detail/$movieId")
                                 },
@@ -89,6 +90,7 @@ class MainActivity : ComponentActivity() {
                             )
                         ) {
                             ListMovieScreen(
+                                onNavigateBack = { navController.popBackStack() },
                                 onNavigateToDetail = { movieId ->
                                     navController.navigate("detail/$movieId")
                                 })

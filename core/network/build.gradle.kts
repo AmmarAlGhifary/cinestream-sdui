@@ -30,6 +30,10 @@ android {
             isMinifyEnabled = false
         }
     }
+    testOptions {
+        // android.util.Log is a no-op in plain JVM tests.
+        unitTests.isReturnDefaultValues = true
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11

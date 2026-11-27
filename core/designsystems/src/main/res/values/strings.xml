@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="ds_retry">Retry</string>
+    <string name="ds_close">Close</string>
+    <string name="ds_go_back">Go back</string>
+    <plurals name="ds_retry_after">
+        <item quantity="one">Try again in %d second.</item>
+        <item quantity="other">Try again in %d seconds.</item>
+    </plurals>
+</resources>
