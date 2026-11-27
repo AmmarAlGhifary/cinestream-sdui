@@ -1,8 +1,8 @@
 # Project Structure
 
-This project is a multi-module Android application engineered around a Server-Driven UI (SDUI) architecture, along with a counterpart classic implementation for architectural comparison.
+This project is a multi-module Android application engineered around a Server-Driven UI (SDUI) architecture.
 
-The repository is modularized into `app`, `core`, `feature`, `app-classic`, and `feature-classic` components.
+The repository is modularized into `app`, `core`, and `feature` components.
 
 ---
 
@@ -59,22 +59,6 @@ Feature modules implementing specific screens driven by the SDUI engine under an
   - `state`: UI states for the search flow.
   - `ui`: Real-time search query bar and vertical results.
   - `viewmodel`: Query processing and debounce handling.
-
----
-
-### 🏛️ Classic Architecture Modules (Comparative Baseline)
-
-Used for empirical comparison in thesis research against traditional native Android development patterns.
-
-#### 1. `app-classic`
-- **Package**: `com.ammar.cinestream.classic`
-- **Responsibilities**: Host application for the hardcoded benchmark application.
-
-#### 2. `feature-classic`
-Feature modules directly consuming REST endpoints (TMDB) with hardcoded UI structures.
-* **`feature-classic:home`**: Hardcoded home screen with static carousel sections.
-* **`feature-classic:detail`**: Hardcoded movie detail screen.
-* **`feature-classic:listMovie`**: Hardcoded category movie list screen.
 
 ---
 

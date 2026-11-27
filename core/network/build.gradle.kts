@@ -19,8 +19,6 @@ android {
         consumerProguardFiles("consumer-rules.pro")
 
         buildConfigField("String", "BASE_URL", "\"${project.findProperty("BASE_URL")}\"")
-        buildConfigField("String", "BASE_URL_TMDB", "\"${project.findProperty("BASE_URL_TMDB")}\"")
-        buildConfigField("String", "API_KEY_TMDB", "\"${project.findProperty("API_KEY_TMDB")}\"")
     }
 
     buildFeatures {

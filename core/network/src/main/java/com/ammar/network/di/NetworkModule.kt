@@ -2,7 +2,6 @@ package com.ammar.network.di
 
 import com.ammar.cinestream.core.network.BuildConfig
 import com.ammar.network.source.SduiApiService
-import com.ammar.cinestream.core.network.source.tmdb.TmdbApiService
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import dagger.Module
 import dagger.Provides
@@ -57,24 +56,5 @@ object NetworkModule {
     @Singleton
     fun provideSduiApiService(retrofit: Retrofit): SduiApiService {
         return retrofit.create(SduiApiService::class.java)
-    }
-
-    @Provides
-    @Singleton
-    @TmdbRetrofitClient
-    fun provideTmdbRetrofit(okHttpClient: OkHttpClient, json: Json): Retrofit {
-        val contentType = "application/json".toMediaType()
-
-        return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL_TMDB)
-            .client(okHttpClient)
-            .addConverterFactory(json.asConverterFactory(contentType))
-            .build()
-    }
-
-    @Provides
-    @Singleton
-    fun provideTmdbApiService(@TmdbRetrofitClient retrofit: Retrofit): TmdbApiService {
-        return retrofit.create(TmdbApiService::class.java)
     }
 }

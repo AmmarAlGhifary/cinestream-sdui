@@ -59,15 +59,6 @@ flowchart LR
 | **`:feature:listMovie`** | [`/feature/listMovie`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature/listMovie) | Categorized vertical movie listing (Trending, Upcoming, Similar) |
 | **`:feature:search`** | [`/feature/search`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature/search) | Real-time movie search exploration screen |
 
-### 🏛️ Classic Benchmark Modules (Traditional Implementation)
-For thesis comparison against traditional native Android development:
-| Module | GitHub Path | Purpose |
-| :--- | :--- | :--- |
-| **`:app-classic`** | [`/app-classic`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/app-classic) | Hardcoded native Android client entrypoint |
-| **`:feature-classic:home`** | [`/feature-classic/home`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature-classic/home) | Hardcoded home screen directly consuming TMDB data |
-| **`:feature-classic:detail`** | [`/feature-classic/detail`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature-classic/detail) | Hardcoded movie detail screen |
-| **`:feature-classic:listMovie`** | [`/feature-classic/listMovie`](https://github.com/AmmarAlGhifary/cinestream-sdui/tree/development/feature-classic/listMovie) | Hardcoded category movie list |
-
 ---
 
 ## 🌐 SDUI Contract & Backend Endpoints
@@ -90,7 +81,6 @@ The Android client dynamically consumes endpoints defined in [cinestream-sdui-ba
 | :--- | :--- | :--- |
 | **`cinestream-sdui`** | `development` | Main integration branch for SDUI Android client features |
 | **`cinestream-sdui`** | `main` | Production-ready stable release branch |
-| **`cinestream-sdui`** | `app-classic/dev` | Feature branch for classic Android comparison architecture |
 | **`cinestream-sdui-backend`** | `main` | Production deployment branch automatically hosted on Vercel |
 
 ---
@@ -121,9 +111,6 @@ chmod +x gradlew
 
 # Build and install SDUI application on running AVD/device
 ./gradlew :app:installDebug
-
-# Build and install Classic comparison application
-./gradlew :app-classic:installDebug
 
 # Run unit tests across all modules
 ./gradlew testDebugUnitTest
