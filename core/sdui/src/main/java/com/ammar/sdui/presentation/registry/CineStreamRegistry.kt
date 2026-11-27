@@ -81,15 +81,18 @@ internal const val SCAFFOLD_TYPE = "screen_scaffold"
 /**
  * The app's Blueprint instance. Hilt provides it to the repository (decoding) and to the app root,
  * which hands it to the UI through LocalSduiBlueprint. Each decode problem is logged with
- * `DecodeError.toString`, which leaves out the payload and any type string the registry does not know.
+ * `DecodeError.toString`, which leaves out the payload and any type string the registry does not know,
+ * followed by a count per kind. No other server text is logged.
  */
 object CineStreamBlueprint {
     val instance: Blueprint by lazy {
         Blueprint(
             registry = CineStreamRegistry,
             onDecodeError = { Log.w(TAG, it.toString()) },
-            onDecoded = { screen, errors ->
-                if (errors.isNotEmpty()) Log.w(TAG, "${screen.id}: decoded with ${errors.size} problem(s)")
+            onDecoded = { _, errors ->
+                if (errors.isNotEmpty()) {
+                    Log.w(TAG, "Decoded with ${errors.size} problem(s): ${errors.groupingBy { it.kind }.eachCount()}")
+                }
             },
         )
     }

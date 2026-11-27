@@ -1,16 +1,16 @@
 [versions]
 agp = "8.13.2"
-kotlin = "2.1.21"
+kotlin = "2.3.21"
 coreKtx = "1.17.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.2"
 composeBom = "2024.09.00"
 
-hilt = "2.56.2"
+hilt = "2.58"
 retrofit = "2.11.0"
 kotlinxSerialization = "1.6.0"
 kotlinxSerializationConverter = "1.0.0"
-ksp = "2.1.21-2.0.1"
+ksp = "2.3.9"
 coil = "2.4.0"
 navigationCompose = "2.7.3"
 kotlinx-coroutines = "1.10.2"
@@ -27,7 +27,7 @@ constraintlayout = "2.2.1"
 foundation = "1.11.0"
 okhttp = "4.12.0"
 
-blueprint = "0.1.0"
+blueprint = "0.4.0"
 
 
 [libraries]

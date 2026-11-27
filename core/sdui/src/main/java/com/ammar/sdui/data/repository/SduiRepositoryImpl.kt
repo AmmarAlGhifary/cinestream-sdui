@@ -10,7 +10,6 @@ import io.github.ammaralghifary.blueprint.model.UnknownComponent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import javax.inject.Inject
 
@@ -38,7 +37,7 @@ class SduiRepositoryImpl @Inject constructor(
 
         // Safe to parse again, the text passed that check.
         val root = blueprint.json.parseToJsonElement(jsonString).jsonObject
-        val toolbar = (root["toolbar"] as? JsonObject)?.let { decodeToolbar(screen.id, it) }
+        val toolbar = (root["toolbar"] as? JsonObject)?.let { decodeToolbar(it) }
         return screen.copy(body = SduiScaffold(toolbar = toolbar, body = body))
     }
 
@@ -46,11 +45,6 @@ class SduiRepositoryImpl @Inject constructor(
      * Blueprint's screen format has no toolbar field, so the toolbar is decoded as the body of its own
      * screen. That keeps it at the nesting depth the server sent it at.
      */
-    private fun decodeToolbar(screenId: String?, toolbar: JsonObject): SduiComponent {
-        val envelope = buildMap {
-            screenId?.let { put("screen_id", JsonPrimitive(it)) }
-            put("body", toolbar)
-        }
-        return blueprint.decodeScreen(JsonObject(envelope)).body
-    }
+    private fun decodeToolbar(toolbar: JsonObject): SduiComponent =
+        blueprint.decodeScreen(JsonObject(mapOf("body" to toolbar))).body
 }

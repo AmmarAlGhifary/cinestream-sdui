@@ -23,12 +23,12 @@ data class ApiAction(
     val endpoint: String,
     val method: String,
     val body: Map<String, String>? = null
-) : SduiAction()
+) : SduiAction
 
 @Serializable
 data class ShareAction(
     val content: String
-) : SduiAction()
+) : SduiAction
 
 // endregion
 
@@ -40,20 +40,20 @@ data class SduiScaffold(
     val toolbar: SduiComponent? = null,
     val body: SduiComponent,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiAppBar(
     val title: SduiComponent,
     val actions: List<SduiComponent> = emptyList(),
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiColumn(
     val children: List<SduiComponent> = emptyList(),
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiSectionHeader(
@@ -61,13 +61,13 @@ data class SduiSectionHeader(
     @SerialName("action_button")
     val actionButton: SduiComponent? = null,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiSectionHeaderDetail(
     val title: SduiComponent,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiVerticalList(
@@ -75,7 +75,7 @@ data class SduiVerticalList(
     val listId: String? = null,
     val items: List<SduiComponent> = emptyList(),
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 // endregion
 
@@ -86,7 +86,7 @@ data class SduiText(
     @SerialName("text_content")
     val textContent: String,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiToolbarTitle(
@@ -95,7 +95,7 @@ data class SduiToolbarTitle(
     val alignment: String? = "start",
     val style: String? = "headline",
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 // endregion
 
@@ -109,7 +109,7 @@ data class SduiFeaturedHero(
     val description: SduiComponent,
     val buttons: List<SduiComponent> = emptyList(),
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiFeaturedHeroDetail(
@@ -120,7 +120,7 @@ data class SduiFeaturedHeroDetail(
     val description2: SduiComponent,
     val description3: SduiComponent,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiMovieCarousel(
@@ -130,7 +130,7 @@ data class SduiMovieCarousel(
     val itemType: String,
     val items: List<SduiComponent> = emptyList(),
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiMovieCard(
@@ -141,7 +141,7 @@ data class SduiMovieCard(
     val title: SduiComponent,
     val action: SduiAction? = null,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiListItem(
@@ -153,7 +153,7 @@ data class SduiListItem(
     val subtitle: SduiText,
     val action: SduiAction? = null,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 // endregion
 
@@ -165,20 +165,20 @@ data class SduiButton(
     val style: String = "primary",
     val action: SduiAction? = null,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiTextButton(
     val text: String,
     val action: SduiAction? = null,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 @Serializable
 data class SduiIconButton(
     @SerialName("icon_name") val iconName: String,
     val action: SduiAction? = null,
     override val modifier: SduiModifier? = null
-) : SduiComponent()
+) : SduiComponent
 
 // endregion

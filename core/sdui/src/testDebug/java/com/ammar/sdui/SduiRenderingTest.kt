@@ -3,7 +3,7 @@ package com.ammar.sdui
 import androidx.compose.material3.Text
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -91,16 +91,19 @@ class SduiRenderingTest {
     }
 
     @Test
-    fun `decode problems are logged without server supplied type names`() {
-        CineStreamBlueprint.instance.decodeScreen("""{"screen_id":"x","body":{"type":"server-made-up-type"}}""")
+    fun `decode problems are logged without server supplied text`() {
+        CineStreamBlueprint.instance.decodeScreen(
+            """{"screen_id":"server-screen-id","body":{"type":"server-made-up-type"}}"""
+        )
 
         val logged = ShadowLog.getLogsForTag("Blueprint").map { it.msg }
         assertTrue(logged.any { "UnregisteredType" in it })
-        assertTrue(logged.none { "server-made-up-type" in it })
+        assertTrue(logged.any { "1 problem(s)" in it && "UnregisteredType=1" in it })
+        assertTrue(logged.none { "server-made-up-type" in it || "server-screen-id" in it })
     }
 
     @Serializable
-    data class Probe(override val modifier: SduiModifier? = null) : SduiComponent()
+    data class Probe(override val modifier: SduiModifier? = null) : SduiComponent
 
     @Test
     fun `the renderer uses the provided Blueprint`() {

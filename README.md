@@ -1,9 +1,9 @@
 # CineStream Android Client
 
 [![Android](https://img.shields.io/badge/Platform-Android%208.0%2B%20(API%2026%2B)-green?logo=android)](https://developer.android.com/)
-[![Kotlin](https://img.shields.io/badge/Kotlin-2.0.21-purple?logo=kotlin)](https://kotlinlang.org/)
-[![Compose](https://img.shields.io/badge/Jetpack%20Compose-BOM%202024.09.00-blue?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
-[![Dagger Hilt](https://img.shields.io/badge/Dagger%20Hilt-2.51.1-orange)](https://dagger.dev/hilt/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3.21-purple?logo=kotlin)](https://kotlinlang.org/)
+[![Compose](https://img.shields.io/badge/Jetpack%20Compose-1.11.2-blue?logo=jetpackcompose)](https://developer.android.com/jetpack/compose)
+[![Dagger Hilt](https://img.shields.io/badge/Dagger%20Hilt-2.58-orange)](https://dagger.dev/hilt/)
 [![Backend](https://img.shields.io/badge/Backend-BFF%20Vercel-black?logo=vercel)](https://sdui-backend.vercel.app/)
 
 The native Android frontend for **CineStream**, engineered to explore **Server-Driven UI (SDUI)** architectures.
