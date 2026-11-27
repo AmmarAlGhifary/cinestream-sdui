@@ -409,6 +409,122 @@ class SessionRepositoryTest {
         }
     }
 
+    private fun resume(): Result<SignInOutcome> = runBlocking { repository.resumeSignIn() }
+
+    /** Everything the server received after the token request. */
+    private fun sessionCalls(): List<String> =
+        generateSequence { server.takeRequest(0, TimeUnit.SECONDS) }
+            .filter { it.path == "/api/auth/session" }
+            .map { it.body.readUtf8() }
+            .toList()
+
+    private val exchangeBody = """{"request_token":"test-token","sign_in_secret":"test-secret"}"""
+
+    @Test
+    fun `returning after approval signs in without the link`() = runBlocking<Unit> {
+        start()
+        server.enqueue(sessionAnswer)
+        val changed = async(start = CoroutineStart.UNDISPATCHED) { repository.accountChanges.first() }
+
+        val outcome = repository.resumeSignIn().getOrThrow()
+
+        assertEquals(SignInOutcome.SignedIn(Account("7", "tester")), outcome)
+        assertEquals("test-session", store.sessionId())
+        assertNull(store.pending())
+        withTimeout(1000) { changed.await() }
+        assertEquals(listOf(exchangeBody), sessionCalls())
+    }
+
+    @Test
+    fun `returning without approval keeps the sign-in waiting for the link`() {
+        start()
+        server.enqueue(json("""{"error":{"code":"SIGN_IN_FAILED"}}""", 401))
+
+        assertTrue(resume().isFailure)
+
+        assertEquals("test-token", store.pending()?.requestToken)
+        assertEquals(SessionState.SignedOut, repository.session.value)
+        assertEquals(listOf(exchangeBody), sessionCalls())
+        server.enqueue(sessionAnswer)
+        assertTrue(complete().getOrThrow() is SignInOutcome.SignedIn)
+    }
+
+    @Test
+    fun `no failure on return spends the sign-in, and each return tries once`() {
+        start()
+        val failures = listOf(
+            json("{}", 400),
+            json("", 401),
+            json("{}", 429),
+            json("{}", 503),
+            json("not json"),
+            MockResponse().setSocketPolicy(SocketPolicy.NO_RESPONSE)
+        )
+        for (answer in failures) {
+            server.enqueue(answer)
+            assertTrue(resume().isFailure)
+            assertEquals("test-token", store.pending()?.requestToken)
+        }
+        assertEquals(1 + failures.size, server.requestCount)
+    }
+
+    @Test
+    fun `returning with nothing pending calls nothing`() {
+        assertEquals(SignInOutcome.Ignored, resume().getOrThrow())
+        assertEquals(0, server.requestCount)
+
+        signIn()
+        assertEquals(SignInOutcome.Ignored, resume().getOrThrow())
+        assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `returning after the sign-in expired calls nothing and the late link still explains`() {
+        start()
+        now = now.plusSeconds(15 * 60)
+
+        assertEquals(SignInOutcome.Ignored, resume().getOrThrow())
+
+        assertEquals(1, server.requestCount)
+        assertRejected(complete())
+    }
+
+    @Test
+    fun `a link and a return together exchange the token once`() = runBlocking<Unit> {
+        for (linkFirst in listOf(true, false)) {
+            store.clearSession()
+            start()
+            server.takeRequest()
+            server.enqueue(sessionAnswer.clone().setHeadersDelay(500, TimeUnit.MILLISECONDS))
+
+            suspend fun first() =
+                if (linkFirst) repository.completeSignIn(approved) else repository.resumeSignIn()
+            val running = async(Dispatchers.IO) { first() }
+            assertNotNull(server.takeRequest(2, TimeUnit.SECONDS))
+            // The other one arrives while the exchange is on its way.
+            val other = if (linkFirst) repository.resumeSignIn() else repository.completeSignIn(approved)
+
+            assertTrue("link first: $linkFirst", running.await().getOrThrow() is SignInOutcome.SignedIn)
+            assertEquals(SignInOutcome.Ignored, other.getOrThrow())
+            assertNull(server.takeRequest(200, TimeUnit.MILLISECONDS))
+        }
+    }
+
+    @Test
+    fun `a return does not queue behind a link exchange that then fails`() = runBlocking<Unit> {
+        start()
+        server.takeRequest()
+        server.enqueue(json("{}", 503).setHeadersDelay(500, TimeUnit.MILLISECONDS))
+        server.enqueue(sessionAnswer)
+        val linking = async(Dispatchers.IO) { repository.completeSignIn(approved) }
+        assertNotNull(server.takeRequest(2, TimeUnit.SECONDS))
+
+        assertEquals(SignInOutcome.Ignored, repository.resumeSignIn().getOrThrow())
+
+        assertTrue(linking.await().isFailure)
+        assertEquals(2, server.requestCount)
+    }
+
     private fun signIn() {
         start()
         server.enqueue(sessionAnswer)

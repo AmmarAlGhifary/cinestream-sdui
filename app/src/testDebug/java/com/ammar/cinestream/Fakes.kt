@@ -10,6 +10,7 @@ import com.ammar.sdui.domain.repository.ActionRepository
 import com.ammar.sdui.domain.repository.SduiRepository
 import com.ammar.sdui.presentation.registry.CineStreamBlueprint
 import io.github.ammaralghifary.blueprint.model.SduiScreen
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
@@ -49,8 +50,19 @@ class FakeSessions : SessionRepository {
         return start
     }
 
+    /** Completes a link only once this does, when set. */
+    var completeGate: CompletableDeferred<Unit>? = null
+    var resume: Result<SignInOutcome> = Result.success(SignInOutcome.Ignored)
+    var resumes = 0
+
+    override suspend fun resumeSignIn(): Result<SignInOutcome> {
+        resumes++
+        return resume.onSuccess { if (it is SignInOutcome.SignedIn) accountChanges.tryEmit(Unit) }
+    }
+
     override suspend fun completeSignIn(link: String): Result<SignInOutcome> {
         links += link
+        completeGate?.await()
         return complete.onSuccess { if (it is SignInOutcome.SignedIn) accountChanges.tryEmit(Unit) }
     }
 

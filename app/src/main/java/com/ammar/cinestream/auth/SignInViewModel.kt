@@ -34,6 +34,7 @@ class SignInViewModel @Inject constructor(
 
     private var starting: Job? = null
     private val linksInProgress = mutableSetOf<String>()
+    private var resuming: Job? = null
     private var lastAttempt: () -> Unit = ::signIn
 
     fun signIn() {
@@ -59,6 +60,20 @@ class SignInViewModel @Inject constructor(
                 )
             } finally {
                 linksInProgress.remove(link)
+            }
+        }
+    }
+
+    /**
+     * The app is in front again. A browser may have kept the redirect to itself, so a sign-in that
+     * is still waiting gets one try. It stays silent unless it works.
+     */
+    fun onResume() {
+        // The link, which arrives just before this, is already finishing the sign-in.
+        if (linksInProgress.isNotEmpty() || resuming?.isActive == true) return
+        resuming = viewModelScope.launch {
+            sessionRepository.resumeSignIn().onSuccess {
+                if (it is SignInOutcome.SignedIn) _error.value = null
             }
         }
     }

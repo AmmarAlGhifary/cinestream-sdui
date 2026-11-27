@@ -4,16 +4,23 @@ import android.app.Application
 import android.content.ComponentName
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
 import com.ammar.cinestream.auth.SignInHost
 import com.ammar.cinestream.auth.SignInViewModel
 import com.ammar.network.error.AppError
+import com.ammar.network.session.Account
 import com.ammar.network.session.SignInOutcome
+import kotlinx.coroutines.CompletableDeferred
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -121,6 +128,69 @@ class SignInTest {
         run { viewModel.onLink("cinestream://auth/tmdb?request_token=forged&approved=true") }
 
         compose.onNodeWithText("Sign-in didn't finish").assertIsDisplayed()
+    }
+
+    private class Owner : LifecycleOwner {
+        val registry = LifecycleRegistry.createUnsafe(this)
+        override val lifecycle: Lifecycle get() = registry
+    }
+
+    @Test
+    fun `each return to the app tries the waiting sign-in once`() {
+        val owner = Owner()
+        run { owner.registry.currentState = Lifecycle.State.STARTED }
+        compose.setContent {
+            CompositionLocalProvider(LocalLifecycleOwner provides owner) {
+                SignInHost(viewModel, openPage = { true })
+            }
+        }
+        compose.waitForIdle()
+        assertEquals(0, sessions.resumes)
+
+        for (visit in 1..3) {
+            run { owner.registry.currentState = Lifecycle.State.RESUMED }
+            assertEquals(visit, sessions.resumes)
+            run { owner.registry.currentState = Lifecycle.State.STARTED }
+        }
+    }
+
+    @Test
+    fun `a failed try on return shows nothing`() {
+        for (failure in listOf(AppError.Http(401, serverCode = "SIGN_IN_FAILED"), AppError.NoConnection())) {
+            sessions.resume = Result.failure(failure)
+            if (sessions.resumes == 0) host() else run(viewModel::onResume)
+
+            compose.onNodeWithText("Close").assertDoesNotExist()
+            assertEquals(null, viewModel.error.value)
+        }
+        assertEquals(2, sessions.resumes)
+    }
+
+    @Test
+    fun `signing in on return closes an earlier sign-in error`() {
+        sessions.complete = Result.failure(AppError.Timeout())
+        host()
+        run { viewModel.onLink(link) }
+        compose.onNodeWithText("Retry").assertIsDisplayed()
+
+        sessions.resume = Result.success(SignInOutcome.SignedIn(Account("7", "tester")))
+        run(viewModel::onResume)
+
+        compose.onNodeWithText("Retry").assertDoesNotExist()
+    }
+
+    @Test
+    fun `returning while the link is being completed starts no second try`() {
+        val gate = CompletableDeferred<Unit>()
+        sessions.completeGate = gate
+
+        run { viewModel.onLink(link) }
+        run(viewModel::onResume)
+        assertEquals(0, sessions.resumes)
+
+        run { gate.complete(Unit) }
+        run(viewModel::onResume)
+        assertEquals(1, sessions.resumes)
     }
 
     @Test

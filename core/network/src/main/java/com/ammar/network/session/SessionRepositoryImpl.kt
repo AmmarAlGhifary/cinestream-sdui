@@ -60,6 +60,20 @@ internal class SessionRepositoryImpl(
         }
     }
 
+    override suspend fun resumeSignIn(): Result<SignInOutcome> {
+        // An exchange that is already running settles this sign-in; a second one must not queue up.
+        if (!completing.tryLock()) return Result.success(SignInOutcome.Ignored)
+        return try {
+            val pending = store.onIo {
+                dropExpiredPending()
+                pending()
+            }
+            if (pending == null) Result.success(SignInOutcome.Ignored) else exchange(pending)
+        } finally {
+            completing.unlock()
+        }
+    }
+
     private sealed interface LinkCheck {
         /** Not about the sign-in being waited for. */
         data object Stray : LinkCheck
@@ -82,24 +96,28 @@ internal class SessionRepositoryImpl(
         return LinkCheck.Approved(pending)
     }
 
-    private suspend fun createSession(pending: PendingSignIn): Result<SignInOutcome> {
-        val result = apiResult<SignInOutcome> {
-            val body = buildJsonObject {
-                put("request_token", pending.requestToken)
-                put("sign_in_secret", pending.secret)
-            }.toString()
-            val answer = api.createSession(body.toRequestBody(JSON)).bodyOrError().getOrThrow()
-            val created = parse<SessionAnswer>(answer)
-            // It becomes a header value, so anything but visible ASCII is rejected here.
-            if (!HEADER_SAFE.matches(created.sessionId)) throw AppError.Parse()
-            val account = Account(created.account.id.content, created.account.username)
-            store.onIo {
-                save(created.sessionId, account)
-                clearPendingIfToken(pending.requestToken)
-            }
-            _accountChanges.tryEmit(Unit)
-            Result.success(SignInOutcome.SignedIn(account))
+    /** Trades an approved token for a session. A success ends this sign-in; a failure leaves it. */
+    private suspend fun exchange(pending: PendingSignIn): Result<SignInOutcome> = apiResult {
+        val body = buildJsonObject {
+            put("request_token", pending.requestToken)
+            put("sign_in_secret", pending.secret)
+        }.toString()
+        val answer = api.createSession(body.toRequestBody(JSON)).bodyOrError().getOrThrow()
+        val created = parse<SessionAnswer>(answer)
+        // It becomes a header value, so anything but visible ASCII is rejected here.
+        if (!HEADER_SAFE.matches(created.sessionId)) throw AppError.Parse()
+        val account = Account(created.account.id.content, created.account.username)
+        store.onIo {
+            save(created.sessionId, account)
+            clearPendingIfToken(pending.requestToken)
         }
+        _accountChanges.tryEmit(Unit)
+        Result.success(SignInOutcome.SignedIn(account))
+    }
+
+    /** The exchange after the user came back through the link, saying they approved. */
+    private suspend fun createSession(pending: PendingSignIn): Result<SignInOutcome> {
+        val result = exchange(pending)
         // A refused token cannot be used again; after a network or server failure it still can.
         val refusal = (result.exceptionOrNull() as? AppError.Http)
             ?.takeIf { it.status in 400..499 && it.status != 408 && it.status != 429 }

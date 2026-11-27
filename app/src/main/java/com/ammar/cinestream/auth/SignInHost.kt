@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
@@ -11,8 +12,8 @@ import com.ammar.designsystems.ErrorDialog
 import com.ammar.sdui.presentation.error.errorDialogModel
 
 /**
- * The part of sign-in that is not on any one screen: opening the approval page and reporting why
- * signing in failed.
+ * The part of sign-in that is not on any one screen: opening the approval page, picking up a sign-in
+ * whose redirect was lost when the app returns, and reporting why signing in failed.
  *
  * @param openPage returns false when the page could not be opened.
  */
@@ -28,6 +29,8 @@ fun SignInHost(
             viewModel.approvalPages.collect { if (!openPage(it)) viewModel.onPageUnavailable() }
         }
     }
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
 
     val error by viewModel.error.collectAsStateWithLifecycle()
     error?.let {

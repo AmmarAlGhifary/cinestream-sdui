@@ -33,6 +33,14 @@ interface SessionRepository {
     suspend fun completeSignIn(link: String): Result<SignInOutcome>
 
     /**
+     * For a redirect that never arrived although the user approved: if a sign-in is waiting and
+     * nothing else is completing it, asks the backend for the session once. A failure leaves the
+     * sign-in waiting, so the link can still finish it, and is not meant to be shown: usually the
+     * user simply has not approved. [SignInOutcome.Ignored] means there was nothing to try.
+     */
+    suspend fun resumeSignIn(): Result<SignInOutcome>
+
+    /**
      * Ends the session on the server. The stored session is removed, and [accountChanges] emits, even
      * if that call fails.
      */
