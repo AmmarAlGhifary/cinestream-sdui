@@ -5,6 +5,7 @@ import com.ammar.network.session.AesGcmCipher
 import com.ammar.network.session.KeyValueStore
 import com.ammar.network.session.SessionStore
 import com.ammar.network.session.StoredSession
+import java.time.Clock
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 
@@ -26,4 +27,4 @@ internal fun storage(store: KeyValueStore = MemoryStore(), key: SecretKey = newK
     EncryptedStorage(store, AesGcmCipher { key })
 
 internal fun signedInStore(sessionId: String = "test-session") =
-    SessionStore(storage()).apply { save(StoredSession(sessionId, "7", "tester")) }
+    SessionStore(storage(), Clock.systemUTC()).apply { save(StoredSession(sessionId, "7", "tester")) }

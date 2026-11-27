@@ -29,22 +29,25 @@ class FavoriteUpdateTest {
 
     private val blueprint = Blueprint(CineStreamRegistry)
 
-    private fun heart(icon: String, next: Boolean, movie: String = "550") =
+    private fun heart(icon: String, next: Boolean, movie: String = "42") =
         """{"type":"icon_button","icon_name":"$icon","action":{"type":"api_action",
            "endpoint":"/api/favorite","method":"POST","body":{"movie_id":"$movie","favorite":$next}}}"""
 
-    private val screen: SduiScreen = run {
-        val json = """{"screen_id":"movie_detail_screen",
-            "toolbar":{"type":"app_bar","title":{"type":"toolbar_title","text_content":"CineStream"},
-              "actions":[${heart("favorite_border", true)},
-                {"type":"icon_button","icon_name":"share","action":{"type":"share_action","content":"x"}}]},
+    private fun fixture(name: String) = requireNotNull(javaClass.classLoader?.getResource(name)).readText()
+
+    private fun detail(toolbar: String): SduiScreen {
+        val json = """{"screen_id":"movie_detail_screen","toolbar":${fixture(toolbar)},
             "body":{"type":"column","children":[]}}"""
         val source = object : NetworkDataSource {
             override fun getScreenBlueprint(screenId: String, queryParams: Map<String, String>): Flow<Result<String>> =
                 flowOf(Result.success(json))
         }
-        runBlocking { SduiRepositoryImpl(source, blueprint).getScreen("movie_detail_screen").first().getOrThrow() }
+        return runBlocking {
+            SduiRepositoryImpl(source, blueprint).getScreen("movie_detail_screen").first().getOrThrow()
+        }
     }
+
+    private val screen: SduiScreen = detail("detail_toolbar_signed_out.json")
 
     private fun SduiScreen.buttons() =
         ((body as SduiScaffold).toolbar as SduiAppBar).actions.map { it as SduiIconButton }
@@ -62,18 +65,20 @@ class FavoriteUpdateTest {
         val (heart, share) = updated.buttons()
         assertEquals(icon, heart.iconName)
         assertEquals(
-            """{"movie_id":"550","favorite":$next}""",
+            """{"movie_id":"42","favorite":$next}""",
             (heart.action as ApiAction).body.toString()
         )
         assertSame(screen.buttons()[1], share)
     }
 
     @Test
-    fun `the returned button replaces the heart`() {
-        val result = answer("""{"movie_id":"550","is_favorite":true,"icon_button":${heart("favorite", false)}}""")
+    fun `the returned button replaces the heart, giving the favorited toolbar`() {
+        val result = answer(fixture("favorite_response.json"))
 
         assertEquals(true, result.isFavorite)
-        assertHeart(screen.updatedBy(tapped, result)!!, "favorite", next = false)
+        val updated = screen.updatedBy(tapped, result)!!
+        assertHeart(updated, "favorite", next = false)
+        assertEquals(detail("detail_toolbar_favorited.json"), updated)
     }
 
     @Test

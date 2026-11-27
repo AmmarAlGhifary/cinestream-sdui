@@ -31,7 +31,7 @@ object SessionModule {
     fun provideSessionStore(@ApplicationContext context: Context): SessionStore {
         val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
         val cipher = AesGcmCipher { AndroidKeystoreKey.getOrCreate(KEY_ALIAS) }
-        return SessionStore(EncryptedStorage(SharedPreferencesStore(preferences), cipher))
+        return SessionStore(EncryptedStorage(SharedPreferencesStore(preferences), cipher), Clock.systemUTC())
     }
 
     @Provides

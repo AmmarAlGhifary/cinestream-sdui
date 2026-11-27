@@ -14,41 +14,37 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** The detail toolbar of the favorites contract: the heart's body carries a real JSON boolean. */
+/** The detail toolbar exactly as the backend sends it: the heart's body carries a real boolean. */
 class FavoriteDecodeTest {
 
     private val errors = mutableListOf<DecodeError>()
     private val blueprint = Blueprint(CineStreamRegistry, onDecodeError = { errors += it })
 
-    private val toolbar = """
-        {"type":"app_bar",
-         "title":{"type":"toolbar_title","text_content":"CineStream","alignment":"start","style":"headline"},
-         "actions":[
-           {"type":"icon_button","icon_name":"favorite_border",
-            "action":{"type":"api_action","endpoint":"/api/favorite","method":"POST",
-                      "body":{"movie_id":"550","favorite":true}}},
-           {"type":"icon_button","icon_name":"share",
-            "action":{"type":"share_action","content":"Check out Fight Club on CineStream!"}}
-         ]}
-    """.trimIndent()
-
-    @Test
-    fun `the heart stays an api action and its body keeps the JSON types`() {
-        val appBar = blueprint.decodeScreen("""{"screen_id":"movie_detail_screen","body":$toolbar}""").body
+    private fun assertToolbar(fixture: String, icon: String, nextState: Boolean) {
+        val json = requireNotNull(javaClass.classLoader?.getResource(fixture)).readText()
+        val appBar = blueprint.decodeScreen("""{"screen_id":"movie_detail_screen","body":$json}""").body
             as SduiAppBar
 
         val (heart, share) = appBar.actions.map { it as SduiIconButton }
         assertEquals(emptyList<DecodeError>(), errors)
-        assertEquals("favorite_border", heart.iconName)
+        assertEquals("the heart comes first", icon, heart.iconName)
         val action = heart.action as ApiAction
         assertEquals("/api/favorite", action.endpoint)
         assertEquals("POST", action.method)
         val body = action.body!!
-        assertEquals(JsonPrimitive("550"), body["movie_id"])
+        assertEquals(JsonPrimitive("42"), body["movie_id"])
         val favorite = body["favorite"] as JsonPrimitive
         assertFalse("a boolean, not a string", favorite.isString)
-        assertTrue(favorite.boolean)
-        assertEquals("""{"movie_id":"550","favorite":true}""", body.toString())
+        assertEquals(nextState, favorite.boolean)
+        assertEquals("""{"movie_id":"42","favorite":$nextState}""", body.toString())
         assertTrue(share.action is ShareAction)
     }
+
+    @Test
+    fun `signed out, the empty heart asks to add the movie`() =
+        assertToolbar("detail_toolbar_signed_out.json", "favorite_border", nextState = true)
+
+    @Test
+    fun `favorited, the filled heart asks to remove it`() =
+        assertToolbar("detail_toolbar_favorited.json", "favorite", nextState = false)
 }

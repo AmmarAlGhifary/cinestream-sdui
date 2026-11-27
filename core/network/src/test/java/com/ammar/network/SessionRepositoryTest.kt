@@ -20,6 +20,7 @@ import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -33,14 +34,16 @@ import java.util.concurrent.TimeUnit
 class SessionRepositoryTest {
 
     private val server = MockWebServer().apply { start() }
-    private val store = SessionStore(storage())
     private var now: Instant = Instant.parse("2026-11-27T10:00:00Z")
+    private val prefs = MemoryStore()
 
     private val clock = object : Clock() {
         override fun instant() = now
         override fun getZone() = ZoneOffset.UTC
         override fun withZone(zone: java.time.ZoneId) = this
     }
+
+    private val store = SessionStore(storage(prefs), clock)
 
     private val client = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor(store, server.url("/")))
@@ -60,9 +63,12 @@ class SessionRepositoryTest {
         MockResponse().setResponseCode(status).setHeader("Content-Type", "application/json").setBody(body)
 
     private fun tokenAnswer(
-        expiresAt: String = "2026-11-27 10:15:00 UTC",
+        expiresAt: String = "2026-11-27T10:15:00.000Z",
         approveUrl: String = "https://www.themoviedb.org/authenticate/test-token"
-    ) = json("""{"request_token":"test-token","expires_at":"$expiresAt","approve_url":"$approveUrl"}""")
+    ) = json(
+        """{"request_token":"test-token","expires_at":"$expiresAt","approve_url":"$approveUrl",
+           "sign_in_secret":"test-secret"}"""
+    )
 
     private val sessionAnswer =
         json("""{"session_id":"test-session","account":{"id":7,"username":"tester"}}""")
@@ -110,7 +116,10 @@ class SessionRepositoryTest {
         val request = server.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/auth/session", request.path)
-        assertEquals("""{"request_token":"test-token"}""", request.body.readUtf8())
+        assertEquals(
+            """{"request_token":"test-token","sign_in_secret":"test-secret"}""",
+            request.body.readUtf8()
+        )
         assertNull(request.getHeader("Authorization"))
     }
 
@@ -196,6 +205,9 @@ class SessionRepositoryTest {
         val expected = Instant.parse("2026-11-27T10:15:00Z")
         assertEquals(expected, parseExpiry("2026-11-27 10:15:00 UTC"))
         assertEquals(expected, parseExpiry("2026-11-27T10:15:00Z"))
+        // The form the backend sends.
+        assertEquals(expected, parseExpiry("2026-11-27T10:15:00.000Z"))
+        assertEquals(Instant.parse("2026-11-27T15:00:00Z"), parseExpiry("2026-11-27T15:00:00.000Z"))
         assertEquals(expected, parseExpiry("2026-11-27T17:15:00+07:00"))
         assertNull(parseExpiry("soon"))
         assertNull(parseExpiry(null))
@@ -241,6 +253,69 @@ class SessionRepositoryTest {
             val error = complete().exceptionOrNull() as AppError.Parse
             assertNull(error.cause)
             assertEquals(SessionState.SignedOut, repository.session.value)
+        }
+    }
+
+    @Test
+    fun `a token answer without the secret cannot start a sign-in`() {
+        val answer = json(
+            """{"request_token":"test-token","expires_at":"2026-11-27T10:15:00.000Z",
+               "approve_url":"https://www.themoviedb.org/authenticate/test-token"}"""
+        )
+
+        assertTrue(start(answer).exceptionOrNull() is AppError.Parse)
+        assertNull(store.pending())
+    }
+
+    @Test
+    fun `the secret is stored encrypted and removed once the sign-in is over`() {
+        fun assertStoredEncrypted() {
+            assertEquals("test-secret", store.pending()?.secret)
+            assertFalse(prefs.values.values.any { "test-secret" in it })
+        }
+        fun assertRemoved() {
+            assertNull(store.pending())
+            assertFalse("pending_sign_in" in prefs.values)
+        }
+
+        // Completed.
+        start()
+        assertStoredEncrypted()
+        server.enqueue(sessionAnswer)
+        complete().getOrThrow()
+        assertRemoved()
+
+        // Declined.
+        start()
+        complete("cinestream://auth/tmdb?request_token=test-token&approved=false")
+        assertRemoved()
+
+        // Expired.
+        start()
+        now = now.plusSeconds(15 * 60)
+        complete()
+        assertRemoved()
+        now = now.minusSeconds(15 * 60)
+
+        // Replaced by a new sign-in, even one that fails.
+        start()
+        start(json("{}", 503))
+        assertRemoved()
+    }
+
+    @Test
+    fun `a 400 or 401 from the session call is a failed sign-in and spends the token`() {
+        val missing = json("""{"error":{"code":"MISSING_PARAMETER","title":"Something's missing"}}""", 400)
+        for (answer in listOf(missing, json("""{"error":{"code":"SIGN_IN_FAILED"}}""", 401), json("", 401))) {
+            start()
+            server.enqueue(answer)
+
+            val error = complete().exceptionOrNull()
+
+            val failedSignIn = error is AppError.SignInFailed ||
+                (error is AppError.Http && error.serverCode == "SIGN_IN_FAILED")
+            assertTrue(error.toString(), failedSignIn)
+            assertNull(store.pending())
         }
     }
 

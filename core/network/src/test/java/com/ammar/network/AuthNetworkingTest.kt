@@ -1,5 +1,6 @@
 package com.ammar.network
 
+import com.ammar.network.di.NetworkModule
 import com.ammar.network.error.AppError
 import com.ammar.network.session.SessionState
 import com.ammar.network.source.ActionDataSourceImpl
@@ -157,13 +158,16 @@ class AuthNetworkingTest {
         backend.enqueue(MockResponse().setBody("""{"session_id":"test-session"}"""))
         val request = Request.Builder()
             .url(backend.url("/api/auth/session"))
-            .post("""{"request_token":"test-token"}""".toRequestBody("application/json".toMediaType()))
+            .post(
+                """{"request_token":"test-token","sign_in_secret":"test-secret"}"""
+                    .toRequestBody("application/json".toMediaType())
+            )
             .build()
 
         client.newCall(request).execute().use { assertTrue(it.body!!.string().isNotEmpty()) }
 
         assertTrue(log.any { "/api/auth/session" in it })
-        assertFalse(log.any { "test-session" in it || "test-token" in it })
+        assertFalse(log.any { "test-session" in it || "test-token" in it || "test-secret" in it })
     }
 
     @Test
@@ -182,7 +186,7 @@ class AuthNetworkingTest {
     fun `an action is sent as described, with its JSON types`() = runBlocking {
         backend.enqueue(MockResponse().setBody("""{"is_favorite":true}"""))
         val body = buildJsonObject {
-            put("movie_id", "550")
+            put("movie_id", "42")
             put("favorite", true)
         }
 
@@ -192,9 +196,14 @@ class AuthNetworkingTest {
         val request = backend.takeRequest()
         assertEquals("POST", request.method)
         assertEquals("/api/favorite", request.path)
-        assertEquals("""{"movie_id":"550","favorite":true}""", request.body.readUtf8())
+        assertEquals("""{"movie_id":"42","favorite":true}""", request.body.readUtf8())
         assertTrue(request.getHeader("Content-Type")!!.startsWith("application/json"))
         assertEquals("Bearer test-session", request.getHeader("Authorization"))
+    }
+
+    @Test
+    fun `the api client has no cache, so signed-in answers are never stored`() {
+        assertNull(NetworkModule.provideOkHttpClient(store).cache)
     }
 
     @Test

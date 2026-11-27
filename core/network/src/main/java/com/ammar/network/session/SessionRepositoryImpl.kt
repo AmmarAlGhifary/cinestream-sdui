@@ -36,34 +36,43 @@ internal class SessionRepositoryImpl(
     override val signIns: Flow<Unit> = _signIns.asSharedFlow()
 
     override suspend fun startSignIn(): Result<String> = apiResult {
+        // A new sign-in replaces the old one, even if this request then fails.
+        store.clearPending()
         api.requestToken().bodyOrError().mapCatching { body ->
             val answer = parse<RequestTokenAnswer>(body)
             // The page gets the user's TMDB password, so only a secure address is opened.
-            if (answer.requestToken.isBlank() || answer.approveUrl.toHttpUrlOrNull()?.isHttps != true) {
+            if (answer.requestToken.isBlank() || answer.signInSecret.isBlank() ||
+                answer.approveUrl.toHttpUrlOrNull()?.isHttps != true
+            ) {
                 throw AppError.Parse()
             }
             val expiresAt = parseExpiry(answer.expiresAt) ?: clock.instant().plus(DEFAULT_LIFETIME)
-            store.savePending(PendingSignIn(answer.requestToken, expiresAt.toEpochMilli()))
+            store.savePending(PendingSignIn(answer.requestToken, answer.signInSecret, expiresAt.toEpochMilli()))
             answer.approveUrl
         }
     }
 
     override suspend fun completeSignIn(link: String): Result<Account> = completing.withLock {
         val callback = SignInCallback.parse(link)
+        store.dropExpiredPending()
         val pending = store.pending()
         // A link that does not carry our token is ignored: it must not cancel the real sign-in.
         if (callback == null || pending == null || callback.requestToken != pending.requestToken) {
+            callback?.requestToken?.let { store.takeLapsed(it) }
             return@withLock Result.failure(AppError.SignInFailed())
         }
-        if (!callback.approved || clock.millis() >= pending.expiresAtMillis) {
+        if (!callback.approved) {
             store.clearPending()
             return@withLock Result.failure(AppError.SignInFailed())
         }
-        createSession(pending.requestToken)
+        createSession(pending)
     }
 
-    private suspend fun createSession(requestToken: String): Result<Account> = apiResult {
-        val body = buildJsonObject { put("request_token", requestToken) }.toString()
+    private suspend fun createSession(pending: PendingSignIn): Result<Account> = apiResult {
+        val body = buildJsonObject {
+            put("request_token", pending.requestToken)
+            put("sign_in_secret", pending.secret)
+        }.toString()
         api.createSession(body.toRequestBody(JSON)).bodyOrError().mapCatching { answer ->
             val created = parse<SessionAnswer>(answer)
             // It becomes a header value, so anything but visible ASCII is rejected here.
@@ -74,11 +83,16 @@ internal class SessionRepositoryImpl(
             _signIns.tryEmit(Unit)
             account
         }
-    }.onFailure { error ->
-        // A refused token cannot be used again; after a network or server failure it still can.
+    }.recoverCatching { error ->
         if (error is AppError.Http && error.status in 400..499 && error.status != 408 && error.status != 429) {
+            // A refused token cannot be used again; after a network or server failure it still can.
             store.clearPending()
+            // To the user a refused sign-in is a failed one, whatever the backend objected to.
+            if (error.status in listOf(400, 401) && error.serverCode != "SIGN_IN_FAILED") {
+                throw AppError.SignInFailed()
+            }
         }
+        throw error
     }
 
     override suspend fun signOut(): Result<Unit> {
@@ -104,6 +118,7 @@ internal class SessionRepositoryImpl(
     @Serializable
     private class RequestTokenAnswer(
         @SerialName("request_token") val requestToken: String,
+        @SerialName("sign_in_secret") val signInSecret: String,
         @SerialName("expires_at") val expiresAt: String? = null,
         @SerialName("approve_url") val approveUrl: String
     )
