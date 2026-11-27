@@ -31,11 +31,11 @@ internal class SessionRepositoryImpl(
 ) : SessionRepository {
 
     private val completing = Mutex()
-    private val _signIns = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val _accountChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     override val session: StateFlow<SessionState> get() = store.state
 
-    override val signIns: Flow<Unit> = _signIns.asSharedFlow()
+    override val accountChanges: Flow<Unit> = _accountChanges.asSharedFlow()
 
     override suspend fun startSignIn(): Result<String> = apiResult {
         // A new sign-in replaces the old one, even if this request then fails.
@@ -97,7 +97,7 @@ internal class SessionRepositoryImpl(
                 save(created.sessionId, account)
                 clearPendingIfToken(pending.requestToken)
             }
-            _signIns.tryEmit(Unit)
+            _accountChanges.tryEmit(Unit)
             Result.success(SignInOutcome.SignedIn(account))
         }
         // A refused token cannot be used again; after a network or server failure it still can.
@@ -123,6 +123,7 @@ internal class SessionRepositoryImpl(
         } finally {
             // Also when the caller gave up: the user asked to be signed out.
             withContext(NonCancellable) { store.onIo { clearSessionIfCurrent(sessionId) } }
+            _accountChanges.tryEmit(Unit)
         }
     }
 

@@ -31,7 +31,7 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
 
     init {
-        viewModelScope.launch { sessionRepository.signIns.collect { reload() } }
+        viewModelScope.launch { sessionRepository.accountChanges.collect { reload() } }
     }
 
     fun onQueryChanged(query: String) {

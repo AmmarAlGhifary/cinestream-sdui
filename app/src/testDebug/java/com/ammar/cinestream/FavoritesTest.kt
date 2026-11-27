@@ -183,7 +183,7 @@ class FavoritesTest {
         compose.onNodeWithText("Sign in required").assertDoesNotExist()
 
         repository.next = screen("""{"type":"column","children":[]}""", toolbar("favorite", false))
-        compose.runOnIdle { sessions.signIns.tryEmit(Unit) }
+        compose.runOnIdle { sessions.accountChanges.tryEmit(Unit) }
         compose.waitForIdle()
 
         compose.onNodeWithContentDescription("favorite").assertIsDisplayed()

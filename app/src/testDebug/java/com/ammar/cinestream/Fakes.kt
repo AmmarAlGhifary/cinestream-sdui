@@ -36,11 +36,12 @@ class FakeActions(var answer: suspend () -> Result<ActionResult> = { Result.succ
 
 class FakeSessions : SessionRepository {
     override val session = MutableStateFlow<SessionState>(SessionState.SignedOut)
-    override val signIns = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val accountChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     var start: Result<String> = Result.success("https://tmdb.example/approve")
     var complete: Result<SignInOutcome> = Result.success(SignInOutcome.SignedIn(Account("7", "tester")))
     var starts = 0
+    var signOuts = 0
     val links = mutableListOf<String>()
 
     override suspend fun startSignIn(): Result<String> {
@@ -50,10 +51,18 @@ class FakeSessions : SessionRepository {
 
     override suspend fun completeSignIn(link: String): Result<SignInOutcome> {
         links += link
-        return complete.onSuccess { if (it is SignInOutcome.SignedIn) signIns.tryEmit(Unit) }
+        return complete.onSuccess { if (it is SignInOutcome.SignedIn) accountChanges.tryEmit(Unit) }
     }
 
-    override suspend fun signOut() = Result.success(Unit)
+    /** What the server call does; the session is forgotten either way, as in the real repository. */
+    var signOutAnswer: Result<Unit> = Result.success(Unit)
+
+    override suspend fun signOut(): Result<Unit> {
+        signOuts++
+        session.value = SessionState.SignedOut
+        accountChanges.tryEmit(Unit)
+        return signOutAnswer
+    }
 
     override suspend fun clear() = Unit
 }

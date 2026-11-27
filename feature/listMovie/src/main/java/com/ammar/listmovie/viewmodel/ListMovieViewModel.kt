@@ -35,7 +35,7 @@ class ListMovieViewModel @Inject constructor(
     private var loadJob: Job? = null
 
     init {
-        viewModelScope.launch { sessionRepository.signIns.collect { reload() } }
+        viewModelScope.launch { sessionRepository.accountChanges.collect { reload() } }
         load()
     }
 

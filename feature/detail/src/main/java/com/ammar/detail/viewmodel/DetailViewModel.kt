@@ -45,8 +45,8 @@ class DetailViewModel @Inject constructor(
     private var actionJob: Job? = null
 
     init {
-        // Signed in now: the page has to show this account's favorite state.
-        viewModelScope.launch { sessionRepository.signIns.collect { reload() } }
+        // Signed in or out: the page has to show the favorite state for whoever that is now.
+        viewModelScope.launch { sessionRepository.accountChanges.collect { reload() } }
         load()
     }
 

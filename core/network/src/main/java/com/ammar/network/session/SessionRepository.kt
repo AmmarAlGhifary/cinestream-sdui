@@ -16,8 +16,11 @@ interface SessionRepository {
 
     val session: StateFlow<SessionState>
 
-    /** Emits after each sign-in that succeeds, so screens can load again as the signed-in user. */
-    val signIns: Flow<Unit>
+    /**
+     * Emits after each sign-in and sign-out the user asked for, so screens can load again. It does
+     * not emit when the backend ends a session: the screen that learns of it says so itself.
+     */
+    val accountChanges: Flow<Unit>
 
     /** Asks for a request token and returns the page where the user approves it. */
     suspend fun startSignIn(): Result<String>
@@ -29,7 +32,10 @@ interface SessionRepository {
      */
     suspend fun completeSignIn(link: String): Result<SignInOutcome>
 
-    /** Ends the session on the server. The stored session is removed even if that call fails. */
+    /**
+     * Ends the session on the server. The stored session is removed, and [accountChanges] emits, even
+     * if that call fails.
+     */
     suspend fun signOut(): Result<Unit>
 
     /** Forgets the stored session and any sign-in in progress, without calling the server. */

@@ -1,6 +1,8 @@
 package com.ammar.sdui.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import com.ammar.sdui.domain.model.SduiScaffold
@@ -18,14 +20,24 @@ val LocalSduiBlueprint = staticCompositionLocalOf<Blueprint> {
     error("No Blueprint provided. Wrap the UI in CompositionLocalProvider(LocalSduiBlueprint provides blueprint).")
 }
 
-/** Renders a decoded screen with [LocalSduiBlueprint]. Features call this instead of Blueprint directly. */
+/** What the app itself adds after the server's toolbar actions. Not part of the server vocabulary. */
+internal val LocalToolbarTrailing = compositionLocalOf<@Composable () -> Unit> { {} }
+
+/**
+ * Renders a decoded screen with [LocalSduiBlueprint]. Features call this instead of Blueprint directly.
+ *
+ * @param toolbarTrailing drawn at the end of the screen's toolbar, if the screen has one.
+ */
 @Composable
 fun SduiScreenRenderer(
     screen: SduiScreen,
     modifier: Modifier = Modifier,
+    toolbarTrailing: @Composable () -> Unit = {},
     onAction: (SduiAction) -> Unit = {}
 ) {
-    BlueprintRenderer(screen, LocalSduiBlueprint.current, modifier, onAction = onAction)
+    CompositionLocalProvider(LocalToolbarTrailing provides toolbarTrailing) {
+        BlueprintRenderer(screen, LocalSduiBlueprint.current, modifier, onAction = onAction)
+    }
 }
 
 /** Renders one subtree, e.g. a screen body without its scaffold. */

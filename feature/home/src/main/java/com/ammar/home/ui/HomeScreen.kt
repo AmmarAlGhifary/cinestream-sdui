@@ -15,6 +15,7 @@ import com.ammar.designsystems.ErrorDialog
 import com.ammar.designsystems.RetryPlaceholder
 import com.ammar.home.state.HomeUiState
 import com.ammar.home.viewmodel.HomeViewModel
+import com.ammar.network.session.SessionState
 import io.github.ammaralghifary.blueprint.model.NavigateAction
 import com.ammar.sdui.presentation.SduiScreenRenderer
 import com.ammar.sdui.presentation.error.errorDialogModel
@@ -33,6 +34,7 @@ fun HomeScreen(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val session by viewModel.session.collectAsStateWithLifecycle()
 
     PullToRefreshBox (
         isRefreshing = isRefreshing,
@@ -61,6 +63,11 @@ fun HomeScreen(
                 SduiScreenRenderer(
                     screen = state.screen,
                     modifier = Modifier.fillMaxSize(),
+                    toolbarTrailing = {
+                        (session as? SessionState.SignedIn)?.let {
+                            AccountMenu(username = it.account.username, onSignOut = viewModel::signOut)
+                        }
+                    },
                     onAction = { action ->
                         if (action is NavigateAction) {
                             when (action.destination){

@@ -47,7 +47,7 @@ Feature modules implementing specific screens driven by the SDUI engine under an
 
 * **`feature:home`**
   - `state`: UI states for the home dashboard.
-  - `ui`: Dynamic home feed containing hero sections and carousels.
+  - `ui`: Dynamic home feed containing hero sections and carousels, plus the account menu (sign out) that the app adds to the toolbar while signed in.
   - `viewmodel`: Coordinates SDUI blueprint fetching and refresh states.
 
 * **`feature:detail`**

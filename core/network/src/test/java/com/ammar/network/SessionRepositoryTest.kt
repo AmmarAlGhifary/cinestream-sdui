@@ -16,7 +16,9 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
+import okhttp3.Request
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import okhttp3.mockwebserver.SocketPolicy
@@ -105,7 +107,7 @@ class SessionRepositoryTest {
         start()
         server.takeRequest()
         server.enqueue(sessionAnswer)
-        val signedIn = async(start = CoroutineStart.UNDISPATCHED) { repository.signIns.first() }
+        val signedIn = async(start = CoroutineStart.UNDISPATCHED) { repository.accountChanges.first() }
 
         val outcome = repository.completeSignIn(approved).getOrThrow()
 
@@ -448,6 +450,36 @@ class SessionRepositoryTest {
         } finally {
             executor.shutdown()
         }
+    }
+
+    @Test
+    fun `sign out is announced once the session is gone, whatever the server answers`() = runBlocking<Unit> {
+        for (answer in listOf(MockResponse().setResponseCode(204), json("{}", 500))) {
+            signIn()
+            server.enqueue(answer)
+            val changed = async(start = CoroutineStart.UNDISPATCHED) {
+                repository.accountChanges.first()
+                repository.session.value
+            }
+
+            repository.signOut()
+
+            assertEquals(SessionState.SignedOut, withTimeout(1000) { changed.await() })
+            server.takeRequest()
+        }
+    }
+
+    @Test
+    fun `a session the server ends is not announced`() = runBlocking<Unit> {
+        signIn()
+        server.enqueue(json("""{"error":{"code":"SESSION_EXPIRED"}}""", 401))
+        val changed = async(start = CoroutineStart.UNDISPATCHED) { repository.accountChanges.first() }
+
+        client.newCall(Request.Builder().url(server.url("/api/home")).build()).execute().close()
+
+        assertEquals(SessionState.SignedOut, repository.session.value)
+        assertNull(withTimeoutOrNull(200) { changed.await() })
+        changed.cancel()
     }
 
     @Test

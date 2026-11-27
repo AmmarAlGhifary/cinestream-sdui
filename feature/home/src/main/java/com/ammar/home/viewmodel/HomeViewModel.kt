@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.ammar.home.state.HomeUiState
 import com.ammar.network.error.toAppError
 import com.ammar.network.session.SessionRepository
+import com.ammar.network.session.SessionState
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -18,8 +19,10 @@ import javax.inject.Inject
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getSduiScreenUseCase: GetSduiScreenUseCase,
-    sessionRepository: SessionRepository
+    private val sessionRepository: SessionRepository
 ) : ViewModel() {
+
+    val session: StateFlow<SessionState> = sessionRepository.session
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -28,9 +31,10 @@ class HomeViewModel @Inject constructor(
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
     private var loadJob: Job? = null
+    private var signOutJob: Job? = null
 
     init {
-        viewModelScope.launch { sessionRepository.signIns.collect { reload() } }
+        viewModelScope.launch { sessionRepository.accountChanges.collect { reload() } }
         load()
     }
 
@@ -46,6 +50,13 @@ class HomeViewModel @Inject constructor(
     }
 
     fun dismissError() = hideError()
+
+    fun signOut() {
+        if (signOutJob?.isActive == true) return
+        // A failed server call needs no message: the session is forgotten either way, and every
+        // screen loads again through accountChanges.
+        signOutJob = viewModelScope.launch { sessionRepository.signOut() }
+    }
 
     private fun load() {
         _isRefreshing.value = false

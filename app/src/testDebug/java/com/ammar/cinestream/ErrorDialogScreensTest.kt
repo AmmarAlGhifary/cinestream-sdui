@@ -336,7 +336,7 @@ class ErrorDialogScreensTest {
         val repository = FakeRepository(content)
         home(repository)
 
-        compose.runOnIdle { sessions.signIns.tryEmit(Unit) }
+        compose.runOnIdle { sessions.accountChanges.tryEmit(Unit) }
         compose.waitForIdle()
 
         assertEquals(2, repository.requests.size)
