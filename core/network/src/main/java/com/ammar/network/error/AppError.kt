@@ -32,6 +32,9 @@ sealed class AppError(cause: Throwable? = null) : Exception(cause) {
     /** The server answered, but not with a screen this app can read. */
     class Parse(cause: Throwable? = null) : AppError(cause)
 
+    /** The sign-in link was not the approval this app asked for, or it came too late. */
+    class SignInFailed : AppError()
+
     /** The app was asked to open a screen without the details that screen needs. */
     class InvalidRequest : AppError()
 

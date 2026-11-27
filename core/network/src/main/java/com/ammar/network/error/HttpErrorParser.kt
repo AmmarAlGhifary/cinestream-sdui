@@ -4,6 +4,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
+import okhttp3.Headers
 import okhttp3.ResponseBody
 import retrofit2.Response
 
@@ -22,10 +23,13 @@ internal object HttpErrorParser {
     /** Codes and request ids are logged and shown in debug builds, so only plain tokens are kept. */
     private val TOKEN = Regex("[A-Za-z0-9_.:-]{1,128}")
 
-    fun parse(response: Response<*>): AppError.Http {
-        val error = response.errorBody()?.let { readErrorObject(it) }
+    fun parse(response: Response<*>): AppError.Http =
+        parse(response.code(), response.headers(), response.errorBody())
+
+    fun parse(status: Int, headers: Headers, body: ResponseBody?): AppError.Http {
+        val error = body?.let { readErrorObject(it) }
         return AppError.Http(
-            status = response.code(),
+            status = status,
             serverCode = error?.string("code")?.takeIf { TOKEN.matches(it) },
             serverTitle = error?.string("title"),
             serverMessage = error?.string("message"),
@@ -33,7 +37,7 @@ internal object HttpErrorParser {
                 ?.takeUnless { it.isString }
                 ?.booleanOrNull,
             requestId = error?.string("request_id")?.takeIf { TOKEN.matches(it) },
-            retryAfterSeconds = parseRetryAfter(response.headers()["Retry-After"])
+            retryAfterSeconds = parseRetryAfter(headers["Retry-After"])
         )
     }
 
