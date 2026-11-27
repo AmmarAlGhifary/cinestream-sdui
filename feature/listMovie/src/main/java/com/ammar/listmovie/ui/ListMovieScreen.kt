@@ -28,6 +28,7 @@ fun ListMovieScreen(
     modifier: Modifier = Modifier,
     viewModel: ListMovieViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
+    onSignIn: () -> Unit,
     onNavigateToDetail: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -37,6 +38,11 @@ fun ListMovieScreen(
     val leave = {
         viewModel.dismissError()
         onNavigateBack()
+    }
+
+    val signIn = {
+        viewModel.dismissError()
+        onSignIn()
     }
 
     PullToRefreshBox(
@@ -53,10 +59,13 @@ fun ListMovieScreen(
             is ListMovieUiState.Error -> {
                 RetryPlaceholder(onRetry = if (state.showDialog) null else viewModel::reload)
                 if (state.showDialog) {
+                    val model = errorDialogModel(state.error, ErrorSecondaryAction.GO_BACK)
                     ErrorDialog(
-                        model = errorDialogModel(state.error, ErrorSecondaryAction.GO_BACK),
+                        model = model,
                         onRetry = viewModel::reload,
-                        onDismiss = leave
+                        onDismiss = if (model.secondaryAction == ErrorSecondaryAction.GO_BACK) leave
+                        else viewModel::dismissError,
+                        onSignIn = signIn
                     )
                 }
             }
@@ -77,13 +86,17 @@ fun ListMovieScreen(
                 )
                 state.refreshError?.let { error ->
                     // The loaded list stays usable, unless the movie it belongs to is gone.
-                    val gone = error.isMovieNotFound()
-                    val secondary =
-                        if (gone) ErrorSecondaryAction.GO_BACK else ErrorSecondaryAction.CLOSE
+                    val model = errorDialogModel(
+                        error,
+                        if (error.isMovieNotFound()) ErrorSecondaryAction.GO_BACK
+                        else ErrorSecondaryAction.CLOSE
+                    )
                     ErrorDialog(
-                        model = errorDialogModel(error, secondary),
+                        model = model,
                         onRetry = viewModel::reload,
-                        onDismiss = if (gone) leave else viewModel::dismissError
+                        onDismiss = if (model.secondaryAction == ErrorSecondaryAction.GO_BACK) leave
+                        else viewModel::dismissError,
+                        onSignIn = signIn
                     )
                 }
             }

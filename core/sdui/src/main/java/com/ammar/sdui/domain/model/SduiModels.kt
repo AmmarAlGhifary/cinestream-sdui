@@ -5,6 +5,7 @@ import io.github.ammaralghifary.blueprint.model.SduiComponent
 import io.github.ammaralghifary.blueprint.model.SduiModifier
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 /*
  * CineStream's own SDUI vocabulary, built on Blueprint's open SduiComponent / SduiAction.
@@ -18,11 +19,12 @@ import kotlinx.serialization.Serializable
 
 // region Actions
 
+/** @param body sent to the server as it arrived, so a boolean stays a boolean. */
 @Serializable
 data class ApiAction(
     val endpoint: String,
     val method: String,
-    val body: Map<String, String>? = null
+    val body: JsonObject? = null
 ) : SduiAction
 
 @Serializable

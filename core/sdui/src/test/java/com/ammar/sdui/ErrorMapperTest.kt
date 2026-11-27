@@ -87,6 +87,36 @@ class ErrorMapperTest {
     }
 
     @Test
+    fun `the sign-in codes ask for sign in and are never retried`() {
+        val cases = listOf(
+            "SIGN_IN_REQUIRED" to (R.string.error_code_sign_in_required_title to R.string.error_code_sign_in_required_message),
+            "SESSION_EXPIRED" to (R.string.error_code_session_expired_title to R.string.error_code_session_expired_message),
+            "SIGN_IN_FAILED" to (R.string.error_code_sign_in_failed_title to R.string.error_code_sign_in_failed_message)
+        )
+        for ((code, texts) in cases) {
+            val content = map(AppError.Http(401, serverCode = code, retryable = true))
+            assertEquals(code, texts, content.titleRes to content.messageRes)
+            assertTrue(code, content.requiresSignIn)
+            assertFalse(code, content.retryable)
+        }
+    }
+
+    @Test
+    fun `a rejected sign-in link reads like the server's sign-in failure`() {
+        val content = map(AppError.SignInFailed())
+
+        assertEquals(R.string.error_code_sign_in_failed_title, content.titleRes)
+        assertTrue(content.requiresSignIn)
+        assertFalse(content.retryable)
+    }
+
+    @Test
+    fun `a 401 without a sign-in code does not ask for sign in`() {
+        assertFalse(map(AppError.Http(401)).requiresSignIn)
+        assertFalse(map(AppError.Http(503, serverCode = "MAINTENANCE")).requiresSignIn)
+    }
+
+    @Test
     fun `the code wins over the status`() {
         val content = map(AppError.Http(500, serverCode = "MOVIE_NOT_FOUND"))
 

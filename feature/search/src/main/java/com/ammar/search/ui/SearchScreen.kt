@@ -36,7 +36,8 @@ import com.ammar.search.viewmodel.SearchViewModel
 fun SearchScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
-    onNavigateToDetail: (String) -> Unit
+    onNavigateToDetail: (String) -> Unit,
+    onSignIn: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -91,7 +92,11 @@ fun SearchScreen(
                             ErrorDialog(
                                 model = errorDialogModel(state.error),
                                 onRetry = viewModel::reload,
-                                onDismiss = viewModel::dismissError
+                                onDismiss = viewModel::dismissError,
+                                onSignIn = {
+                                    viewModel.dismissError()
+                                    onSignIn()
+                                }
                             )
                         }
                     }

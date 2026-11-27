@@ -41,6 +41,7 @@ import com.ammar.sdui.domain.model.SduiColumn
 import com.ammar.sdui.domain.model.SduiListItem
 import com.ammar.sdui.domain.model.SduiScaffold
 import com.ammar.sdui.domain.model.SduiVerticalList
+import com.ammar.sdui.presentation.LocalToolbarTrailing
 import io.github.ammaralghifary.blueprint.render.SduiScope
 
 /**
@@ -68,7 +69,10 @@ fun SduiScaffoldComponent(model: SduiScaffold, modifier: Modifier, scope: SduiSc
 fun SduiAppBarComponent(model: SduiAppBar, modifier: Modifier, scope: SduiScope) {
     TopAppBar(
         title = { scope.Render(model.title) },
-        actions = { model.actions.forEach { scope.Render(it) } },
+        actions = {
+            model.actions.forEach { scope.Render(it) }
+            LocalToolbarTrailing.current()
+        },
         modifier = modifier,
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = colorScheme.background,

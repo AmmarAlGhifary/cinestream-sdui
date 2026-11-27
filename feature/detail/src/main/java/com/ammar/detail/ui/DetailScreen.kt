@@ -27,6 +27,7 @@ fun DetailScreen(
     modifier: Modifier = Modifier,
     viewModel: DetailViewModel = hiltViewModel(),
     onNavigateBack: () -> Unit,
+    onSignIn: () -> Unit,
     onNavigateToDetail: (String) -> Unit,
     onNavigateToList : (String, String?) -> Unit) {
 
@@ -37,6 +38,11 @@ fun DetailScreen(
     val leave = {
         viewModel.dismissError()
         onNavigateBack()
+    }
+
+    val signIn = {
+        viewModel.dismissError()
+        onSignIn()
     }
 
     PullToRefreshBox(
@@ -62,15 +68,20 @@ fun DetailScreen(
                             onNavigateToList = onNavigateToList
                         )
                     })
-                state.refreshError?.let { error ->
+                val failure = state.actionFailure
+                (failure?.error ?: state.refreshError)?.let { error ->
                     // The loaded page stays usable, unless the movie itself is gone.
-                    val gone = error.isMovieNotFound()
-                    val secondary =
-                        if (gone) ErrorSecondaryAction.GO_BACK else ErrorSecondaryAction.CLOSE
+                    val model = errorDialogModel(
+                        error,
+                        if (error.isMovieNotFound()) ErrorSecondaryAction.GO_BACK
+                        else ErrorSecondaryAction.CLOSE
+                    )
                     ErrorDialog(
-                        model = errorDialogModel(error, secondary),
-                        onRetry = viewModel::reload,
-                        onDismiss = if (gone) leave else viewModel::dismissError
+                        model = model,
+                        onRetry = { if (failure != null) viewModel.send(failure.action) else viewModel.reload() },
+                        onDismiss = if (model.secondaryAction == ErrorSecondaryAction.GO_BACK) leave
+                        else viewModel::dismissError,
+                        onSignIn = signIn
                     )
                 }
             }
@@ -78,10 +89,13 @@ fun DetailScreen(
             is DetailUiState.Error -> {
                 RetryPlaceholder(onRetry = if (state.showDialog) null else viewModel::reload)
                 if (state.showDialog) {
+                    val model = errorDialogModel(state.error, ErrorSecondaryAction.GO_BACK)
                     ErrorDialog(
-                        model = errorDialogModel(state.error, ErrorSecondaryAction.GO_BACK),
+                        model = model,
                         onRetry = viewModel::reload,
-                        onDismiss = leave
+                        onDismiss = if (model.secondaryAction == ErrorSecondaryAction.GO_BACK) leave
+                        else viewModel::dismissError,
+                        onSignIn = signIn
                     )
                 }
             }

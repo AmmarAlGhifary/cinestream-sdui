@@ -72,6 +72,9 @@ The Android client dynamically consumes endpoints defined in [cinestream-sdui-ba
 | `/api/movie_detail_screen` | `GET` | `movie_id` | `:feature:detail` | Blueprint for movie backdrop, summary, and similar carousels |
 | `/api/movie_list_screen` | `GET` | `list_type`, `movie_id` | `:feature:listMovie` | Vertical list blueprint for categories (`trending`, `upcoming`, `similar`) |
 | `/api/search` | `GET` | `query` | `:feature:search` | Blueprint for search query results |
+| `/api/auth/request_token` | `POST` | None | `:core:network` | Starts TMDB sign-in and returns the approval page |
+| `/api/auth/session` | `POST` / `DELETE` | `request_token`, `sign_in_secret` | `:core:network` | Creates the session after approval, or signs out |
+| `/api/favorite` | `POST` | `movie_id`, `favorite` | `:feature:detail` | Sets a favorite and returns the updated heart button |
 
 ---
 

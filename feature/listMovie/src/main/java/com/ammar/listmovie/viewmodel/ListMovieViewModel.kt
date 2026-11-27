@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.ammar.listmovie.state.ListMovieUiState
 import com.ammar.network.error.AppError
 import com.ammar.network.error.toAppError
+import com.ammar.network.session.SessionRepository
 import io.github.ammaralghifary.blueprint.model.NavigateAction
 import io.github.ammaralghifary.blueprint.model.SduiAction
 import com.ammar.sdui.domain.usecase.GetSduiScreenUseCase
@@ -21,7 +22,8 @@ import javax.inject.Inject
 @HiltViewModel
 class ListMovieViewModel @Inject constructor(
     private val getSduiScreenUseCase: GetSduiScreenUseCase,
-    private val savedStateHandle: SavedStateHandle
+    private val savedStateHandle: SavedStateHandle,
+    sessionRepository: SessionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ListMovieUiState>(ListMovieUiState.Loading)
@@ -33,6 +35,7 @@ class ListMovieViewModel @Inject constructor(
     private var loadJob: Job? = null
 
     init {
+        viewModelScope.launch { sessionRepository.accountChanges.collect { reload() } }
         load()
     }
 

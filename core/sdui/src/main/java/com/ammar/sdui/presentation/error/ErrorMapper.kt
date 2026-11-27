@@ -15,7 +15,9 @@ data class ErrorContent(
     val serverTitle: String? = null,
     val serverMessage: String? = null,
     val retryAfterSeconds: Int? = null,
-    val technicalDetail: String? = null
+    val technicalDetail: String? = null,
+    /** Signing in is the way forward, so that replaces retrying. */
+    val requiresSignIn: Boolean = false
 )
 
 /** The movie this screen is about does not exist, so staying on the screen is pointless. */
@@ -35,10 +37,31 @@ object ErrorMapper {
     private data class Fallback(
         @param:StringRes val titleRes: Int,
         @param:StringRes val messageRes: Int,
-        val retryable: Boolean
+        val retryable: Boolean,
+        val requiresSignIn: Boolean = false
+    )
+
+    private val signInFailed = Fallback(
+        R.string.error_code_sign_in_failed_title,
+        R.string.error_code_sign_in_failed_message,
+        retryable = false,
+        requiresSignIn = true
     )
 
     private val byCode: Map<String, Fallback> = mapOf(
+        "SIGN_IN_REQUIRED" to Fallback(
+            R.string.error_code_sign_in_required_title,
+            R.string.error_code_sign_in_required_message,
+            retryable = false,
+            requiresSignIn = true
+        ),
+        "SESSION_EXPIRED" to Fallback(
+            R.string.error_code_session_expired_title,
+            R.string.error_code_session_expired_message,
+            retryable = false,
+            requiresSignIn = true
+        ),
+        "SIGN_IN_FAILED" to signInFailed,
         "MISSING_PARAMETER" to Fallback(
             R.string.error_code_missing_parameter_title,
             R.string.error_code_missing_parameter_message,
@@ -118,6 +141,7 @@ object ErrorMapper {
             is AppError.Parse -> Fallback(
                 R.string.error_parse_title, R.string.error_parse_message, retryable = true
             ).toContent()
+            is AppError.SignInFailed -> signInFailed.toContent()
             is AppError.InvalidRequest -> Fallback(
                 R.string.error_invalid_request_title, R.string.error_invalid_request_message, retryable = false
             ).toContent()
@@ -130,6 +154,8 @@ object ErrorMapper {
         val known = error.serverCode?.let { byCode[it] }
         val fallback = known ?: byStatus(error.status)
         val retryable = when {
+            // Sending the same request again cannot help until the user signs in.
+            known?.requiresSignIn == true -> false
             known != null -> error.retryable ?: known.retryable
             // Without a code we recognise, a server-side failure is always worth another try.
             error.status in 500..599 -> true
@@ -158,7 +184,8 @@ object ErrorMapper {
         else -> unknown
     }
 
-    private fun Fallback.toContent() = ErrorContent(titleRes, messageRes, retryable)
+    private fun Fallback.toContent() =
+        ErrorContent(titleRes, messageRes, retryable, requiresSignIn = requiresSignIn)
 
     /** Server text is shown to users, so anything that looks like a URL or an exception is dropped. */
     private fun String?.displayable(): String? = this?.takeIf {

@@ -39,6 +39,12 @@
     <string name="error_http_5xx_message">Something went wrong on our side. Please try again later.</string>
 
     <!-- Fallbacks by backend error code: the exact texts of the backend contract -->
+    <string name="error_code_sign_in_required_title">Sign in required</string>
+    <string name="error_code_sign_in_required_message">Sign in with your TMDB account to save favorites.</string>
+    <string name="error_code_session_expired_title">Session expired</string>
+    <string name="error_code_session_expired_message">Please sign in again to keep using favorites.</string>
+    <string name="error_code_sign_in_failed_title">Sign-in didn\'t finish</string>
+    <string name="error_code_sign_in_failed_message">We couldn\'t complete sign-in. Please try again.</string>
     <string name="error_code_missing_parameter_title">Something\'s missing</string>
     <string name="error_code_missing_parameter_message">We couldn\'t open this page because some information is missing.</string>
     <string name="error_code_invalid_parameter_title">Invalid request</string>

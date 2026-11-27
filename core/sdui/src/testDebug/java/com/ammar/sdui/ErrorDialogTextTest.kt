@@ -8,6 +8,8 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.ammar.designsystems.ErrorDialog
+import com.ammar.designsystems.ErrorDialogModel
+import com.ammar.designsystems.ErrorPrimaryAction
 import com.ammar.designsystems.ErrorSecondaryAction
 import com.ammar.network.error.AppError
 import com.ammar.sdui.presentation.error.errorDialogModel
@@ -28,6 +30,8 @@ class ErrorDialogTextTest {
 
     private var retries = 0
     private var dismissals = 0
+    private var signIns = 0
+    private var model: ErrorDialogModel? = null
 
     private fun show(
         error: AppError,
@@ -35,10 +39,13 @@ class ErrorDialogTextTest {
         secondary: ErrorSecondaryAction = ErrorSecondaryAction.CLOSE
     ) {
         compose.setContent {
+            val shown = errorDialogModel(error, secondary, showTechnicalDetail = debug)
+            model = shown
             ErrorDialog(
-                model = errorDialogModel(error, secondary, showTechnicalDetail = debug),
+                model = shown,
                 onRetry = { retries++ },
-                onDismiss = { dismissals++ }
+                onDismiss = { dismissals++ },
+                onSignIn = { signIns++ }
             )
         }
     }
@@ -96,7 +103,8 @@ class ErrorDialogTextTest {
             ErrorDialog(
                 model = errorDialogModel(AppError.Http(503, serverCode = "MAINTENANCE", retryAfterSeconds = wait)),
                 onRetry = {},
-                onDismiss = {}
+                onDismiss = {},
+                onSignIn = {}
             )
         }
         val expected = listOf(
@@ -114,6 +122,49 @@ class ErrorDialogTextTest {
             compose.onNodeWithText("Try again in $text.").assertIsDisplayed()
         }
     }
+
+    private fun assertSignInDialog(error: AppError, title: String, message: String) {
+        // The screen asks for Go back, but a sign-in error is always closed instead.
+        show(error, secondary = ErrorSecondaryAction.GO_BACK)
+
+        assertEquals(ErrorPrimaryAction.SIGN_IN, model?.primaryAction)
+        assertEquals(ErrorSecondaryAction.CLOSE, model?.secondaryAction)
+        compose.onNodeWithText(title).assertIsDisplayed()
+        compose.onNodeWithText(message).assertIsDisplayed()
+        compose.onNodeWithText("Retry").assertDoesNotExist()
+        compose.onNodeWithText("Go back").assertDoesNotExist()
+        compose.onNodeWithText("Sign in").performClick()
+        compose.onNodeWithText("Close").performClick()
+        assertEquals(listOf(1, 1, 0), listOf(signIns, dismissals, retries))
+    }
+
+    @Test
+    fun `sign in required offers sign in`() = assertSignInDialog(
+        AppError.Http(401, serverCode = "SIGN_IN_REQUIRED"),
+        "Sign in required",
+        "Sign in with your TMDB account to save favorites."
+    )
+
+    @Test
+    fun `an expired session offers sign in`() = assertSignInDialog(
+        AppError.Http(401, serverCode = "SESSION_EXPIRED"),
+        "Session expired",
+        "Please sign in again to keep using favorites."
+    )
+
+    @Test
+    fun `a failed sign-in from the server offers sign in`() = assertSignInDialog(
+        AppError.Http(401, serverCode = "SIGN_IN_FAILED"),
+        "Sign-in didn't finish",
+        "We couldn't complete sign-in. Please try again."
+    )
+
+    @Test
+    fun `a rejected sign-in link offers sign in`() = assertSignInDialog(
+        AppError.SignInFailed(),
+        "Sign-in didn't finish",
+        "We couldn't complete sign-in. Please try again."
+    )
 
     @Test
     fun `server title and message replace the fallback`() {

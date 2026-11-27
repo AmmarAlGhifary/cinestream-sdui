@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Share
@@ -71,6 +72,7 @@ fun SduiIconButtonComponent(
 ) {
     val imageVector = when (model.iconName) {
         "search" -> Icons.Default.Search
+        "favorite" -> Icons.Default.Favorite
         "favorite_border" -> Icons.Default.FavoriteBorder
         "share" -> Icons.Default.Share
         else -> Icons.Default.Warning //Fallback

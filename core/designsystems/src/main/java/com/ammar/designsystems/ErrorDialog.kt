@@ -17,13 +17,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.ammar.cinestream.core.designsystems.R
 
+/** What the main button offers, when there is one. */
+enum class ErrorPrimaryAction { RETRY, SIGN_IN }
+
 /** What the second button offers. The caller's onDismiss has to do what this promises. */
 enum class ErrorSecondaryAction { CLOSE, GO_BACK }
 
 /**
  * Everything an error dialog says, already in the user's language.
  *
- * @param retryable false leaves out the Retry button.
+ * @param primaryAction null leaves only the second button.
  * @param retryAfterSeconds how long the server asked the user to wait, if it did.
  * @param technicalDetail an extra line for debug builds. It must be null in release.
  */
@@ -31,7 +34,7 @@ enum class ErrorSecondaryAction { CLOSE, GO_BACK }
 data class ErrorDialogModel(
     val title: String,
     val message: String,
-    val retryable: Boolean,
+    val primaryAction: ErrorPrimaryAction?,
     val secondaryAction: ErrorSecondaryAction = ErrorSecondaryAction.CLOSE,
     val retryAfterSeconds: Int? = null,
     val technicalDetail: String? = null
@@ -42,12 +45,14 @@ data class ErrorDialogModel(
  *
  * @param onDismiss the secondary button, also run by the system back button. A tap outside does
  * nothing, so nobody leaves a screen by accident.
+ * @param onSignIn the main button when [ErrorDialogModel.primaryAction] asks for sign in.
  */
 @Composable
 fun ErrorDialog(
     model: ErrorDialogModel,
     onRetry: () -> Unit,
     onDismiss: () -> Unit,
+    onSignIn: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val secondaryButton: @Composable () -> Unit = {
@@ -75,13 +80,15 @@ fun ErrorDialog(
             }
         },
         confirmButton = {
-            if (model.retryable) {
-                TextButton(onClick = onRetry) { Text(stringResource(R.string.ds_retry)) }
-            } else {
-                secondaryButton()
+            when (model.primaryAction) {
+                ErrorPrimaryAction.RETRY ->
+                    TextButton(onClick = onRetry) { Text(stringResource(R.string.ds_retry)) }
+                ErrorPrimaryAction.SIGN_IN ->
+                    TextButton(onClick = onSignIn) { Text(stringResource(R.string.ds_sign_in)) }
+                null -> secondaryButton()
             }
         },
-        dismissButton = if (model.retryable) secondaryButton else null
+        dismissButton = if (model.primaryAction != null) secondaryButton else null
     )
 }
 
