@@ -1,57 +1,74 @@
 # Project Structure
 
-This project is a multi-module Android application using a Server-Driven UI (SDUI) approach. The structure is logically separated into `app`, `core`, and `feature` modules.
+This project is a multi-module Android application engineered around a Server-Driven UI (SDUI) architecture.
 
-## Modules Overview
+The repository is modularized into `app`, `core`, and `feature` components.
 
-### `app`
-The main entry point of the application. It acts as the wiring module that brings all features and core components together.
-- **`com.ammar.cinestream`**: Contains application-level configurations, Dependency Injection (DI) setup, and main activity.
+---
 
-### `core`
-Contains reusable components, foundational libraries, and data layer logic shared across multiple features.
+## Modules Directory
 
-* **`core:sdui`** (Server-Driven UI Engine)
-  The engine responsible for parsing server responses and rendering Jetpack Compose UI dynamically.
-  - **`data/repository`**: Handles fetching SDUI layout responses.
-  - **`domain/model`**: Defines UI component data models.
-  - **`domain/usecase`**: SDUI specific business logic.
-  - **`presentation/components`**: Maps domain models to native Jetpack Compose components.
-  - **`presentation/registry`**: Component registry for dynamic rendering.
+### 🚀 SDUI Architecture Modules
+
+#### 1. `app`
+The main application entry point and dependency injection root for the SDUI engine.
+- **Package**: `com.ammar.cinestream`
+- **Responsibilities**: Application-level initialization, Dagger Hilt DI container setup, and global navigation wiring (`MainActivity`).
+
+#### 2. `core`
+Reusable foundational libraries and shared data layer logic.
+
+* **`core:sdui`** (Server-Driven UI Engine, built on [Blueprint](https://github.com/AmmarAlGhifary/blueprint))
+  Decodes server responses and renders them as Jetpack Compose. Decoding and the render loop come from
+  Blueprint (`io.github.ammaralghifary:blueprint-core` 0.4.0); this module supplies CineStream's vocabulary.
+  - `data/repository`: Fetches SDUI JSON and decodes it with `Blueprint.decodeScreen`. Folds `toolbar` + `body` into a `screen_scaffold` node.
+  - `domain/model`: CineStream component and action models, implementing Blueprint's `SduiComponent` / `SduiAction` interfaces.
+  - `domain/usecase`: SDUI business logic.
+  - `domain/model/ActionResult`: updates the favorite button from the answer to an `api_action`.
+  - `presentation/error`: `ErrorMapper`, the one place that maps an `AppError` (backend code first, HTTP status second) to user-facing text and a retry decision.
+  - `presentation/components`: Compose renderers, each receiving Blueprint's `SduiScope` to render children and dispatch actions.
+  - `presentation/registry`: `CineStreamRegistry` binds every JSON `type` to a model and renderer; `CineStreamBlueprint` is the shared instance, provided by Hilt and passed to the renderer through `LocalSduiBlueprint`.
+  - Tolerant decoding: an unknown or malformed node degrades alone (placeholder in debug, nothing in release) and is logged under the `Blueprint` tag.
 
 * **`core:network`**
-  Handles all external API communications and networking setup.
-  - **`di`**: Network module DI provisioning.
-  - **`source`**: API clients, interceptors, and remote data sources.
+  Handles external API communications and networking infrastructure.
+  - `di`: Network module dependency injection provisioning.
+  - `source`: Retrofit API services, interceptors, and network data sources.
+  - `error`: `AppError`, the typed list of load failures, and the parser for the backend's error body and `Retry-After`.
+  - `session`: TMDB sign-in (`SessionRepository`). The session is stored encrypted with an AndroidKeyStore key and excluded from backup. The auth interceptor signs requests to the backend only and drops a dead session.
 
 * **`core:designsystems`**
-  Houses the common UI elements, typography, colors, and theming.
-  - **`theme`**: Contains Compose theme definitions, color palettes, and typography used globally.
+  Shared UI design system, tokens, typography, and themes.
+  - `theme`: Compose Material 3 theme definitions, color palettes, and typography used globally.
+  - `ErrorDialog` (the single entry point that draws an error, from an `ErrorDialogModel`) and `RetryPlaceholder`.
 
-###  `feature`
-Isolated feature modules that implement specific screens or flows. Each feature strictly follows an MVVM architecture pattern.
+#### 3. `feature`
+Feature modules implementing specific screens driven by the SDUI engine under an MVVM architecture.
 
 * **`feature:home`**
-  - **`state`**: UI states for the home screen.
-  - **`ui`**: Compose screens and layouts for the home feed.
-  - **`viewmodel`**: Handles the business logic for the home feature.
+  - `state`: UI states for the home dashboard.
+  - `ui`: Dynamic home feed containing hero sections and carousels, plus the account menu (sign out) that the app adds to the toolbar while signed in.
+  - `viewmodel`: Coordinates SDUI blueprint fetching and refresh states.
 
 * **`feature:detail`**
-  - **`state`**: UI states for the movie details screen.
-  - **`ui`**: Compose screens for viewing movie specifics.
-  - **`viewmodel`**: Handles the business logic for fetching and displaying movie details.
+  - `state`: UI states for the movie detail screen.
+  - `ui`: Detail view rendering metadata and similar movie carousels.
+  - `viewmodel`: Handles movie-specific blueprint retrieval.
 
 * **`feature:listMovie`**
-  - **`state`**: UI states for movie lists (e.g., categories, see all).
-  - **`ui`**: Compose screens for listing movies.
-  - **`viewmodel`**: Handles pagination and listing logic.
+  - `state`: UI states for movie category lists.
+  - `ui`: Vertical list layouts for categories (Trending, Upcoming, Similar).
+  - `viewmodel`: Handles pagination and query filters.
 
 * **`feature:search`**
-  - **`state`**: UI states for search operations.
-  - **`ui`**: Compose screens for the search bar and results.
-  - **`viewmodel`**: Handles query processing and search results.
+  - `state`: UI states for the search flow.
+  - `ui`: Real-time search query bar and vertical results.
+  - `viewmodel`: Query processing and debounce handling.
+
+---
 
 ## Key Architectural Patterns
-- **Modularization**: Separation of concerns by layers (`core`, `feature`) to improve build times, reusability, and maintainability.
-- **Clean Architecture / MVVM**: Each feature module contains `ui`, `state`, and `viewmodel` packages for predictable state management.
-- **Server-Driven UI (SDUI)**: The UI logic and structure can be dynamically controlled by the backend through the `core:sdui` engine.
+
+- **Modularization**: Strict separation of concerns by layers (`core`, `feature`) to improve build speeds, promote reusability, and prevent unintended coupling.
+- **Clean Architecture & MVVM**: Unidirectional data flow (UDF) with immutable UI state and Kotlin Coroutines/Flow.
+- **Server-Driven UI (SDUI)**: Client acts as a declarative rendering runtime, allowing dynamic updates to UI hierarchy, components, and user actions directly from the backend without client application releases.

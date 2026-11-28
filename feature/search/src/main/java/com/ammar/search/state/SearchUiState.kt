@@ -1,10 +1,12 @@
 package com.ammar.search.state
 
-import com.ammar.sdui.domain.model.SduiScreen
+import com.ammar.network.error.AppError
+import io.github.ammaralghifary.blueprint.model.SduiScreen
 
 sealed class SearchUiState {
     object Idle : SearchUiState()
     object Loading : SearchUiState()
     data class Success(val screen: SduiScreen) : SearchUiState()
-    data class Error(val message: String) : SearchUiState()
+    /** The search failed. [showDialog] turns false once the user has closed the dialog. */
+    data class Error(val error: AppError, val showDialog: Boolean = true) : SearchUiState()
 }

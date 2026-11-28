@@ -1,0 +1,1 @@
+{"movie_id":"42","is_favorite":true,"icon_button":{"type":"icon_button","icon_name":"favorite","action":{"type":"api_action","endpoint":"/api/favorite","method":"POST","body":{"movie_id":"42","favorite":false}}}}

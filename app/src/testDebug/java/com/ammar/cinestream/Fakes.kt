@@ -1,0 +1,92 @@
+package com.ammar.cinestream
+
+import com.ammar.network.session.Account
+import com.ammar.network.session.SessionRepository
+import com.ammar.network.session.SessionState
+import com.ammar.network.session.SignInOutcome
+import com.ammar.sdui.domain.model.ActionResult
+import com.ammar.sdui.domain.model.ApiAction
+import com.ammar.sdui.domain.repository.ActionRepository
+import com.ammar.sdui.domain.repository.SduiRepository
+import com.ammar.sdui.presentation.registry.CineStreamBlueprint
+import io.github.ammaralghifary.blueprint.model.SduiScreen
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+
+/** Answers every screen request with [next] and records the parameters. */
+class FakeRepository(var next: Result<SduiScreen>) : SduiRepository {
+    val requests = mutableListOf<Map<String, String>>()
+
+    override fun getScreen(screenId: String, params: Map<String, String>) = flow {
+        requests += params
+        emit(next)
+    }
+}
+
+class FakeActions(var answer: suspend () -> Result<ActionResult> = { Result.success(ActionResult()) }) :
+    ActionRepository {
+    val sent = mutableListOf<ApiAction>()
+
+    override suspend fun send(action: ApiAction): Result<ActionResult> {
+        sent += action
+        return answer()
+    }
+}
+
+class FakeSessions : SessionRepository {
+    override val session = MutableStateFlow<SessionState>(SessionState.SignedOut)
+    override val accountChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    var start: Result<String> = Result.success("https://tmdb.example/approve")
+    var complete: Result<SignInOutcome> = Result.success(SignInOutcome.SignedIn(Account("7", "tester")))
+    var starts = 0
+    var signOuts = 0
+    val links = mutableListOf<String>()
+
+    override suspend fun startSignIn(): Result<String> {
+        starts++
+        return start
+    }
+
+    /** Completes a link only once this does, when set. */
+    var completeGate: CompletableDeferred<Unit>? = null
+    var resume: Result<SignInOutcome> = Result.success(SignInOutcome.Ignored)
+    var resumes = 0
+
+    override suspend fun resumeSignIn(): Result<SignInOutcome> {
+        resumes++
+        return resume.onSuccess { if (it is SignInOutcome.SignedIn) accountChanges.tryEmit(Unit) }
+    }
+
+    override suspend fun completeSignIn(link: String): Result<SignInOutcome> {
+        links += link
+        completeGate?.await()
+        return complete.onSuccess { if (it is SignInOutcome.SignedIn) accountChanges.tryEmit(Unit) }
+    }
+
+    /** What the server call does; the session is forgotten either way, as in the real repository. */
+    var signOutAnswer: Result<Unit> = Result.success(Unit)
+
+    override suspend fun signOut(): Result<Unit> {
+        signOuts++
+        session.value = SessionState.SignedOut
+        accountChanges.tryEmit(Unit)
+        return signOutAnswer
+    }
+
+    override suspend fun clear() = Unit
+}
+
+fun screen(body: String, toolbar: String? = null): Result<SduiScreen> = Result.success(
+    CineStreamBlueprint.instance.decodeScreen("""{"screen_id":"x","body":$body}""").let { decoded ->
+        if (toolbar == null) decoded
+        else decoded.copy(
+            body = com.ammar.sdui.domain.model.SduiScaffold(
+                toolbar = CineStreamBlueprint.instance.decodeScreen("""{"screen_id":"t","body":$toolbar}""").body,
+                body = decoded.body
+            )
+        )
+    }
+)

@@ -1,6 +1,6 @@
 package com.ammar.network.source
 
-import com.ammar.cinestream.core.network.source.SduiApiService
+import com.ammar.network.error.AppError
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -9,18 +9,13 @@ class NetworkDataSourceImpl @Inject constructor(
     private val apiService: SduiApiService
 ) : NetworkDataSource {
 
-    override fun getScreenBlueprint(screenId: String, params: Map<String, String>): Flow<Result<String>> = flow {
-        try {
-            val response = apiService.getScreenBlueprint(screenId, params)
-
-            if (response.isSuccessful && response.body() != null) {
-                val rawJson = response.body()!!.string()
-                emit(Result.success(rawJson))
-            } else {
-                emit(Result.failure(Exception("Network error: ${response.code()} ${response.message()}")))
-            }
-        } catch (e: Exception) {
-            emit(Result.failure(e))
+    /** Emits once. A failure is always an [AppError]. */
+    override fun getScreenBlueprint(screenId: String, queryParams: Map<String, String>): Flow<Result<String>> = flow {
+        val result = apiResult {
+            // A screen always has a body, so an empty one cannot be read.
+            apiService.getScreenBlueprint(screenId, queryParams).bodyOrError()
+                .mapCatching { it.ifEmpty { throw AppError.Parse() } }
         }
+        emit(result)
     }
 }

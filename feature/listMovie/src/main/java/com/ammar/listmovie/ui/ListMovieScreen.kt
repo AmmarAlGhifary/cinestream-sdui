@@ -3,33 +3,47 @@ package com.ammar.listmovie.ui
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ammar.designsystems.ErrorDialog
+import com.ammar.designsystems.ErrorSecondaryAction
+import com.ammar.designsystems.RetryPlaceholder
 import com.ammar.listmovie.state.ListMovieUiState
 import com.ammar.listmovie.viewmodel.ListMovieViewModel
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.model.NavigateAction
+import com.ammar.sdui.presentation.SduiScreenRenderer
+import com.ammar.sdui.presentation.error.errorDialogModel
+import com.ammar.sdui.presentation.error.isMovieNotFound
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListMovieScreen(
     modifier: Modifier = Modifier,
     viewModel: ListMovieViewModel = hiltViewModel(),
+    onNavigateBack: () -> Unit,
+    onSignIn: () -> Unit,
     onNavigateToDetail: (String) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+
+    // Hides the dialog before leaving, so a second tap cannot pop another screen.
+    val leave = {
+        viewModel.dismissError()
+        onNavigateBack()
+    }
+
+    val signIn = {
+        viewModel.dismissError()
+        onSignIn()
+    }
 
     PullToRefreshBox(
         isRefreshing = isRefreshing,
@@ -43,20 +57,25 @@ fun ListMovieScreen(
                 }
             }
             is ListMovieUiState.Error -> {
-                Box(modifier =
-                    Modifier.align(Alignment.Center)) {
-                    SelectionContainer {
-                        Text(text = "Failed to load list: ${state.message}", modifier = Modifier.padding(16.dp))
-                    }
+                RetryPlaceholder(onRetry = if (state.showDialog) null else viewModel::reload)
+                if (state.showDialog) {
+                    val model = errorDialogModel(state.error, ErrorSecondaryAction.GO_BACK)
+                    ErrorDialog(
+                        model = model,
+                        onRetry = viewModel::reload,
+                        onDismiss = if (model.secondaryAction == ErrorSecondaryAction.GO_BACK) leave
+                        else viewModel::dismissError,
+                        onSignIn = signIn
+                    )
                 }
             }
             is ListMovieUiState.Success -> {
-                UiComponentRenderer(
-                    component = state.screen,
+                SduiScreenRenderer(
+                    screen = state.screen,
                     modifier = Modifier.fillMaxSize(),
                     onAction = { action ->
-                        if (action is NavigationAction && action.destination == "movie_detail_screen") {
-                            val movieId = action.params?.get("movie_id")
+                        if (action is NavigateAction && action.destination == "movie_detail_screen") {
+                            val movieId = action.params.get("movie_id")
                             if (movieId != null) {
                                 onNavigateToDetail(movieId)
                             }
@@ -65,6 +84,21 @@ fun ListMovieScreen(
                         }
                     }
                 )
+                state.refreshError?.let { error ->
+                    // The loaded list stays usable, unless the movie it belongs to is gone.
+                    val model = errorDialogModel(
+                        error,
+                        if (error.isMovieNotFound()) ErrorSecondaryAction.GO_BACK
+                        else ErrorSecondaryAction.CLOSE
+                    )
+                    ErrorDialog(
+                        model = model,
+                        onRetry = viewModel::reload,
+                        onDismiss = if (model.secondaryAction == ErrorSecondaryAction.GO_BACK) leave
+                        else viewModel::dismissError,
+                        onSignIn = signIn
+                    )
+                }
             }
         }
     }

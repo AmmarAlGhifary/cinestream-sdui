@@ -22,8 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.ammar.sdui.domain.model.NavigationAction
-import com.ammar.sdui.presentation.registry.UiComponentRenderer
+import io.github.ammaralghifary.blueprint.model.NavigateAction
+import com.ammar.sdui.presentation.SduiScreenRenderer
+import com.ammar.sdui.presentation.content
+import com.ammar.sdui.presentation.error.errorDialogModel
+import com.ammar.designsystems.ErrorDialog
+import com.ammar.designsystems.RetryPlaceholder
 import com.ammar.search.state.SearchUiState
 import com.ammar.search.viewmodel.SearchViewModel
 
@@ -32,7 +36,8 @@ import com.ammar.search.viewmodel.SearchViewModel
 fun SearchScreen(
     modifier: Modifier = Modifier,
     viewModel: SearchViewModel = hiltViewModel(),
-    onNavigateToDetail: (String) -> Unit
+    onNavigateToDetail: (String) -> Unit,
+    onSignIn: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
@@ -82,19 +87,26 @@ fun SearchScreen(
                         CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
                     }
                     is SearchUiState.Error -> {
-                        Text(
-                            text = "Error: ${state.message}",
-                            modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                            color = MaterialTheme.colorScheme.error
-                        )
+                        RetryPlaceholder(onRetry = if (state.showDialog) null else viewModel::reload)
+                        if (state.showDialog) {
+                            ErrorDialog(
+                                model = errorDialogModel(state.error),
+                                onRetry = viewModel::reload,
+                                onDismiss = viewModel::dismissError,
+                                onSignIn = {
+                                    viewModel.dismissError()
+                                    onSignIn()
+                                }
+                            )
+                        }
                     }
                     is SearchUiState.Success -> {
-                        UiComponentRenderer(
-                            component = state.screen.body,
+                        SduiScreenRenderer(
+                            component = state.screen.content,
                             modifier = Modifier.fillMaxSize(),
                             onAction = { action ->
-                                if (action is NavigationAction && action.destination == "movie_detail_screen") {
-                                    action.params?.get("movie_id")?.let { onNavigateToDetail(it) }
+                                if (action is NavigateAction && action.destination == "movie_detail_screen") {
+                                    action.params.get("movie_id")?.let { onNavigateToDetail(it) }
                                 }
                             }
                         )
